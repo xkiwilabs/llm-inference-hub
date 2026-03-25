@@ -41,8 +41,9 @@ case "$SLOT" in
 
         # Pull the new model
         export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
+        HF_CMD=$(command -v hf || command -v huggingface-cli)
         echo "Pulling $MODEL..."
-        huggingface-cli download "$MODEL"
+        $HF_CMD download "$MODEL"
 
         # Restart small service
         docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-small
@@ -69,8 +70,9 @@ case "$SLOT" in
 
             # Pull the new model
             export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
+            HF_CMD=$(command -v hf || command -v huggingface-cli)
             echo "Pulling $MODEL..."
-            huggingface-cli download "$MODEL"
+            $HF_CMD download "$MODEL"
 
             # Start/restart large service with replicas=1
             export LARGE_MODEL_REPLICAS=1

@@ -1,5 +1,5 @@
 # Called by hub setup
-# Installs NVIDIA drivers, Docker, NVIDIA Container Toolkit, huggingface-cli.
+# Installs NVIDIA drivers, Docker, NVIDIA Container Toolkit, huggingface CLI.
 # Idempotent — safe to run multiple times.
 
 echo "=== Inference Hub Setup ==="
@@ -67,12 +67,14 @@ else
     echo "  Configured and Docker restarted"
 fi
 
-# --- huggingface-cli ---
-echo "[5/5] Checking huggingface-cli..."
-if command -v huggingface-cli &>/dev/null; then
-    echo "  OK: $(huggingface-cli version 2>/dev/null || echo 'installed')"
+# --- huggingface CLI (hf) ---
+echo "[5/5] Checking huggingface CLI..."
+if command -v hf &>/dev/null; then
+    echo "  OK: $(hf version 2>/dev/null || echo 'installed')"
+elif command -v huggingface-cli &>/dev/null; then
+    echo "  OK: $(huggingface-cli version 2>/dev/null || echo 'installed (legacy command)')"
 else
-    echo "  Installing huggingface-cli..."
+    echo "  Installing huggingface CLI..."
     if command -v pipx &>/dev/null; then
         pipx install huggingface_hub[cli]
     else

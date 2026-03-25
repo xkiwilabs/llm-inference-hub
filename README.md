@@ -36,7 +36,7 @@ This installs everything you need (requires `sudo`):
 - NVIDIA GPU drivers
 - Docker (official apt repo)
 - NVIDIA Container Toolkit (lets Docker see your GPUs)
-- `huggingface-cli` (for downloading models)
+- HuggingFace CLI (`hf`) for downloading models
 - Creates your `.env` config file from the template
 
 If something is already installed, it skips it. Safe to run multiple times.

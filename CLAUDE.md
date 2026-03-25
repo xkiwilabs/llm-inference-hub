@@ -53,10 +53,10 @@ Everything goes through the `hub` CLI at the repo root:
 ## Script Structure
 
 `hub` sources scripts from `scripts/`:
-- `scripts/setup.sh` — idempotent prerequisite installer (NVIDIA drivers, Docker, nvidia-ctk, huggingface-cli)
+- `scripts/setup.sh` — idempotent prerequisite installer (NVIDIA drivers, Docker, nvidia-ctk, HuggingFace CLI)
 - `scripts/start.sh` — sets replicas, runs compose up
 - `scripts/status.sh` — container state, nvidia-smi, endpoint health checks
-- `scripts/pull-models.sh` — downloads models via huggingface-cli
+- `scripts/pull-models.sh` — downloads models via HuggingFace CLI (`hf`)
 - `scripts/set-model.sh` — updates .env, pulls model, restarts service
 
 ## Design Principles
