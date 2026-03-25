@@ -1,0 +1,18 @@
+model_list:
+  - model_name: small
+    litellm_params:
+      model: openai/os.environ/SMALL_MODEL
+      api_base: http://vllm-small:8001/v1
+      api_key: "no-key-needed"
+
+  - model_name: large
+    litellm_params:
+      model: openai/os.environ/LARGE_MODEL
+      api_base: http://vllm-large:8002/v1
+      api_key: "no-key-needed"
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  drop_params: true
