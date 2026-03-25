@@ -91,10 +91,85 @@ if [[ ! -f "$HUB_DIR/.env" ]]; then
     echo "Created .env from .env.example"
 fi
 
+# --- GPU auto-detection ---
+ENV_FILE="$HUB_DIR/.env"
+
+update_env() {
+    local key="$1" value="$2"
+    if grep -q "^${key}=" "$ENV_FILE"; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
+    else
+        echo "${key}=${value}" >> "$ENV_FILE"
+    fi
+}
+
+if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
+    echo "=== Detecting GPU hardware ==="
+
+    GPU_COUNT=$(nvidia-smi --query-gpu=count --format=csv,noheader | head -1 | xargs)
+    GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1 | xargs)
+    GPU_VRAM_MB=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -1 | xargs)
+    TOTAL_VRAM_MB=0
+    while IFS= read -r line; do
+        TOTAL_VRAM_MB=$((TOTAL_VRAM_MB + $(echo "$line" | xargs)))
+    done < <(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits)
+    TOTAL_VRAM_GB=$((TOTAL_VRAM_MB / 1024))
+
+    echo "  GPUs:       $GPU_COUNT x $GPU_NAME"
+    echo "  VRAM/GPU:   $((GPU_VRAM_MB / 1024)) GB"
+    echo "  Total VRAM: ${TOTAL_VRAM_GB} GB"
+    echo ""
+
+    # Configure GPU indices
+    if [[ "$GPU_COUNT" -eq 1 ]]; then
+        update_env "SMALL_MODEL_GPU" "0"
+        update_env "LARGE_MODEL_GPUS" "0"
+        update_env "TENSOR_PARALLEL_SIZE" "1"
+    elif [[ "$GPU_COUNT" -eq 2 ]]; then
+        update_env "SMALL_MODEL_GPU" "0"
+        update_env "LARGE_MODEL_GPUS" "0,1"
+        update_env "TENSOR_PARALLEL_SIZE" "2"
+    elif [[ "$GPU_COUNT" -ge 3 ]]; then
+        update_env "SMALL_MODEL_GPU" "0"
+        # Use all GPUs for the large model
+        GPUS=$(seq -s, 0 $((GPU_COUNT - 1)))
+        update_env "LARGE_MODEL_GPUS" "$GPUS"
+        update_env "TENSOR_PARALLEL_SIZE" "$GPU_COUNT"
+    fi
+
+    update_env "GPU_MEMORY_UTILIZATION" "0.90"
+
+    # Choose models based on total VRAM
+    if [[ "$TOTAL_VRAM_GB" -ge 160 ]]; then
+        # 160GB+ (e.g. 2x RTX Pro 6000): both models
+        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
+        update_env "LARGE_MODEL" "openai/gpt-oss-120b"
+        echo "  Config: small (gpt-oss-20b) + large (gpt-oss-120b)"
+    elif [[ "$TOTAL_VRAM_GB" -ge 80 ]]; then
+        # 80-159GB (e.g. single 96GB, or 2x48GB): small + large fits tight
+        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
+        update_env "LARGE_MODEL" "openai/gpt-oss-120b"
+        update_env "GPU_MEMORY_UTILIZATION" "0.85"
+        echo "  Config: small (gpt-oss-20b) + large (gpt-oss-120b), conservative memory (0.85)"
+    elif [[ "$TOTAL_VRAM_GB" -ge 30 ]]; then
+        # 30-79GB (e.g. RTX 5090 32GB, or 2x24GB): small model only
+        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
+        update_env "LARGE_MODEL" ""
+        echo "  Config: small only (gpt-oss-20b) — not enough VRAM for large model"
+    else
+        # <30GB (e.g. RTX 4090 24GB): small model only
+        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
+        update_env "LARGE_MODEL" ""
+        echo "  Config: small only (gpt-oss-20b) — not enough VRAM for large model"
+    fi
+
+    echo "  GPU settings written to .env"
+fi
+
 echo ""
 echo "=== Setup complete ==="
 echo ""
 echo "Next steps:"
-echo "  1. Edit .env — set HF_TOKEN and LITELLM_MASTER_KEY at minimum"
+echo "  1. Edit .env — set HF_TOKEN and LITELLM_MASTER_KEY"
 echo "  2. Run: ./hub pull-models"
 echo "  3. Run: ./hub start"
