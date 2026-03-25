@@ -172,9 +172,9 @@ echo "=== API Key Generation ==="
 echo ""
 
 # Generate master key if not already set
-CURRENT_MASTER=$(grep "^LITELLM_MASTER_KEY=" "$ENV_FILE" 2>/dev/null | cut -d= -f2-)
+CURRENT_MASTER=$(grep "^LITELLM_MASTER_KEY=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- | sed 's/#.*//' | xargs)
 if [[ -z "$CURRENT_MASTER" ]]; then
-    MASTER_KEY="sk-master-$(openssl rand -hex 16)"
+    MASTER_KEY="mind-master-$(openssl rand -hex 16)"
     update_env "LITELLM_MASTER_KEY" "$MASTER_KEY"
     echo "Generated master key: $MASTER_KEY"
 else
@@ -189,7 +189,7 @@ KEY_COUNT="${KEY_COUNT:-5}"
 
 KEYS=()
 for i in $(seq 1 "$KEY_COUNT"); do
-    key="sk-team-$(openssl rand -hex 12)"
+    key="mind-team-$(openssl rand -hex 12)"
     KEYS+=("$key")
 done
 
