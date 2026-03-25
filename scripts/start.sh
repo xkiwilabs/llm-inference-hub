@@ -4,7 +4,12 @@
 RESTART=false
 if [[ "${1:-}" == "--restart" ]]; then
     RESTART=true
-    docker compose -f "$HUB_DIR/docker-compose.yml" down
+    docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" down
+fi
+
+if [[ -z "${SMALL_MODEL:-}" ]]; then
+    echo "Error: SMALL_MODEL not set in .env"
+    exit 1
 fi
 
 # Auto-set replicas: 1 if LARGE_MODEL is set, 0 otherwise
@@ -22,7 +27,7 @@ else
     echo "  Large model: (none)"
 fi
 
-docker compose -f "$HUB_DIR/docker-compose.yml" up -d
+docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d
 
 echo ""
 echo "Services starting. Run './hub status' to check health."

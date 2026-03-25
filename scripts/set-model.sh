@@ -39,11 +39,13 @@ case "$SLOT" in
         # Re-source .env
         set -a; source "$ENV_FILE"; set +a
 
-        # Pull model
-        source "$HUB_DIR/scripts/pull-models.sh"
+        # Pull the new model
+        export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
+        echo "Pulling $MODEL..."
+        huggingface-cli download "$MODEL"
 
         # Restart small service
-        docker compose -f "$HUB_DIR/docker-compose.yml" up -d --force-recreate vllm-small
+        docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-small
         echo "Done. vllm-small restarting with $MODEL"
         ;;
 
@@ -52,7 +54,7 @@ case "$SLOT" in
             echo "Clearing large model..."
             update_env_var "LARGE_MODEL" ""
             export LARGE_MODEL_REPLICAS=0
-            docker compose -f "$HUB_DIR/docker-compose.yml" up -d --scale vllm-large=0
+            docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --scale vllm-large=0
             echo "Done. Large model disabled."
         else
             if [[ -z "$MODEL" ]]; then
@@ -65,12 +67,14 @@ case "$SLOT" in
             # Re-source .env
             set -a; source "$ENV_FILE"; set +a
 
-            # Pull model
-            source "$HUB_DIR/scripts/pull-models.sh"
+            # Pull the new model
+            export HUGGING_FACE_HUB_TOKEN="$HF_TOKEN"
+            echo "Pulling $MODEL..."
+            huggingface-cli download "$MODEL"
 
             # Start/restart large service with replicas=1
             export LARGE_MODEL_REPLICAS=1
-            docker compose -f "$HUB_DIR/docker-compose.yml" up -d --force-recreate vllm-large
+            docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-large
             echo "Done. vllm-large restarting with $MODEL"
         fi
         ;;

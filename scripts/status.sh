@@ -3,7 +3,7 @@
 # Shows: container states, GPU utilization, endpoint health checks.
 
 echo "=== Container Status ==="
-docker compose -f "$HUB_DIR/docker-compose.yml" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 
 echo ""
 echo "=== GPU Utilization ==="
