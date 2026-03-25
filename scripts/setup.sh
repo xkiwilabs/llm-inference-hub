@@ -166,10 +166,55 @@ if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
     echo "  GPU settings written to .env"
 fi
 
+# --- API keys ---
+echo ""
+echo "=== API Key Generation ==="
+echo ""
+
+# Generate master key if not already set
+CURRENT_MASTER=$(grep "^LITELLM_MASTER_KEY=" "$ENV_FILE" 2>/dev/null | cut -d= -f2-)
+if [[ -z "$CURRENT_MASTER" ]]; then
+    MASTER_KEY="sk-master-$(openssl rand -hex 16)"
+    update_env "LITELLM_MASTER_KEY" "$MASTER_KEY"
+    echo "Generated master key: $MASTER_KEY"
+else
+    MASTER_KEY="$CURRENT_MASTER"
+    echo "Master key already set (keeping existing)"
+fi
+
+# Ask how many team keys to generate
+echo ""
+read -rp "How many team API keys to generate? [5]: " KEY_COUNT
+KEY_COUNT="${KEY_COUNT:-5}"
+
+KEYS=()
+for i in $(seq 1 "$KEY_COUNT"); do
+    key="sk-team-$(openssl rand -hex 12)"
+    KEYS+=("$key")
+done
+
+# Write comma-separated keys to .env
+KEY_LIST=$(IFS=,; echo "${KEYS[*]}")
+update_env "LITELLM_API_KEYS" "$KEY_LIST"
+
+echo ""
+echo "Generated $KEY_COUNT team API keys:"
+echo ""
+echo "  ┌──────────────────────────────────────┐"
+echo "  │  Team API Keys — copy and share      │"
+echo "  ├──────────────────────────────────────┤"
+for i in "${!KEYS[@]}"; do
+    printf "  │  %d. %-33s│\n" "$((i + 1))" "${KEYS[$i]}"
+done
+echo "  └──────────────────────────────────────┘"
+echo ""
+echo "  Master key (admin only, do not share):"
+echo "  $MASTER_KEY"
+
 echo ""
 echo "=== Setup complete ==="
 echo ""
 echo "Next steps:"
-echo "  1. Edit .env — set HF_TOKEN and LITELLM_MASTER_KEY"
+echo "  1. Edit .env — set HF_TOKEN (get from https://huggingface.co/settings/tokens)"
 echo "  2. Run: ./hub pull-models"
 echo "  3. Run: ./hub start"
