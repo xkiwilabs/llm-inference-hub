@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HUB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source .env if it exists
+if [[ -f "$HUB_DIR/.env" ]]; then
+    set -a
+    source "$HUB_DIR/.env"
+    set +a
+fi
+
+usage() {
+    cat <<'EOF'
+Usage: ./hub <command>
+
+Commands:
+  setup                     Install prerequisites and scaffold .env
+  start                     Start all services
+  stop                      Stop all services
+  restart                   Restart all services
+  status                    Show service status, GPU utilization, and health
+  pull-models               Download models defined in .env
+  set-model <slot> <model>  Change a model (slot: small|large, or "large --clear")
+  logs [service]            Tail service logs
+  help                      Show this help message
+EOF
+}
+
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+    setup)      source "$HUB_DIR/scripts/setup.sh" ;;
+    start)      source "$HUB_DIR/scripts/start.sh" ;;
+    stop)       docker compose -f "$HUB_DIR/docker-compose.yml" down ;;
+    restart)    source "$HUB_DIR/scripts/start.sh" --restart ;;
+    status)     source "$HUB_DIR/scripts/status.sh" ;;
+    pull-models) source "$HUB_DIR/scripts/pull-models.sh" ;;
+    set-model)  source "$HUB_DIR/scripts/set-model.sh" "$@" ;;
+    logs)       docker compose -f "$HUB_DIR/docker-compose.yml" logs -f "$@" ;;
+    help|*)     usage ;;
+esac
