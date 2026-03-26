@@ -32,50 +32,27 @@ cd inference-hub
 ./hub setup
 ```
 
-This installs everything you need (requires `sudo`):
-- NVIDIA GPU drivers
-- Docker (official apt repo)
-- NVIDIA Container Toolkit (lets Docker see your GPUs)
-- HuggingFace CLI (`hf`) for downloading models
-- Creates your `.env` config file from the template
+This does everything automatically:
 
-If something is already installed, it skips it. Safe to run multiple times.
+- Installs NVIDIA GPU drivers (if missing)
+- Installs Docker from the official apt repo (not snap)
+- Installs NVIDIA Container Toolkit so Docker can see your GPUs
+- Installs HuggingFace CLI (`hf`) for downloading models
+- Detects your GPU hardware (count, VRAM, CUDA version)
+- Picks the right vLLM image for your driver
+- Chooses appropriate models for your VRAM
+- Generates a master API key and team API keys (default: 5)
+- Creates your `.env` config file with everything pre-filled
 
-### 3. Edit your `.env`
+Requires `sudo` for system packages. Safe to run multiple times (idempotent).
+
+### 3. Set your HuggingFace token
+
+The only thing setup can't generate is your HuggingFace token. Get one from https://huggingface.co/settings/tokens, then:
 
 ```bash
-nano .env
+sed -i 's/^HF_TOKEN=.*/HF_TOKEN=hf_your_token_here/' .env
 ```
-
-You **must** set these two values:
-
-| Variable | What it is | Where to get it |
-|---|---|---|
-| `HF_TOKEN` | HuggingFace access token | https://huggingface.co/settings/tokens |
-| `LITELLM_MASTER_KEY` | Admin API key (you choose this) | Pick any string, e.g. `sk-master-myteam-2026` |
-
-Then configure for your hardware:
-
-**Single GPU (RTX 4090 / 5090):**
-```bash
-SMALL_MODEL=openai/gpt-oss-20b
-LARGE_MODEL=
-SMALL_MODEL_GPU=0
-TENSOR_PARALLEL_SIZE=1
-GPU_MEMORY_UTILIZATION=0.90
-```
-
-**Dual GPU (RTX Pro 6000 x2):**
-```bash
-SMALL_MODEL=openai/gpt-oss-20b
-LARGE_MODEL=openai/gpt-oss-120b
-SMALL_MODEL_GPU=0
-LARGE_MODEL_GPUS=0,1
-TENSOR_PARALLEL_SIZE=2
-GPU_MEMORY_UTILIZATION=0.90
-```
-
-Leave `LARGE_MODEL=` blank if you only have one GPU or don't need a second model.
 
 ### 4. Download models
 
@@ -83,7 +60,7 @@ Leave `LARGE_MODEL=` blank if you only have one GPU or don't need a second model
 ./hub pull-models
 ```
 
-Downloads the models you configured to `~/.cache/huggingface`. The 20B model is ~10-12GB. This way containers start fast instead of downloading on first boot.
+Downloads the models to `~/.cache/huggingface`. This way containers start fast instead of downloading on first boot.
 
 ### 5. Start the stack
 
@@ -91,7 +68,7 @@ Downloads the models you configured to `~/.cache/huggingface`. The 20B model is 
 ./hub start
 ```
 
-This starts the vLLM inference engine(s) and the LiteLLM gateway. Model loading takes 1-2 minutes.
+Starts the vLLM inference engine(s) and the LiteLLM gateway. Model loading takes 1-2 minutes.
 
 ### 6. Verify it's working
 
@@ -99,7 +76,7 @@ This starts the vLLM inference engine(s) and the LiteLLM gateway. Model loading 
 ./hub status
 ```
 
-Wait until you see all services as healthy. Then test with a request:
+Wait until all services show healthy, then test:
 
 ```bash
 curl http://localhost:4200/v1/chat/completions \
@@ -111,29 +88,33 @@ curl http://localhost:4200/v1/chat/completions \
   }'
 ```
 
-Replace `YOUR_MASTER_KEY` with the `LITELLM_MASTER_KEY` you set in `.env`.
+Your master key was printed during setup and is stored in `.env` as `LITELLM_MASTER_KEY`.
 
-## Using the API
+## Connecting clients
 
-The API is OpenAI-compatible. Point any tool or library at:
+The API is OpenAI-compatible. Any tool, library, or framework that can talk to the OpenAI API can use inference-hub.
+
+### Connection details
 
 ```
-Base URL: http://<machine-ip>:4200/v1
-API Key:  your LITELLM_MASTER_KEY
+Base URL:  http://<machine-ip>:4200/v1
+API Key:   a team key from setup (mind-team-xxx) or the master key
 ```
 
 Available model names:
 - `small` — the fast model (gpt-oss-20b by default)
 - `large` — the big model (gpt-oss-120b by default, if configured)
 
-### Python example
+When connecting from the same machine, use `localhost`. From other machines on the LAN or Tailscale, use the machine's IP address.
+
+### Python (OpenAI SDK)
 
 ```python
 from openai import OpenAI
 
 client = OpenAI(
     base_url="http://192.168.1.100:4200/v1",
-    api_key="sk-master-myteam-2026",
+    api_key="mind-team-abc123...",
 )
 
 response = client.chat.completions.create(
@@ -143,15 +124,102 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
+### curl
+
+```bash
+curl http://192.168.1.100:4200/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer mind-team-abc123..." \
+  -d '{"model": "small", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+### Urika
+
+Inference-hub works as a private endpoint for [Urika](https://github.com/YOUR_ORG/urika) projects. This lets you run agents on your own hardware — nothing leaves your network.
+
+In your project's `urika.toml`:
+
+```toml
+# Use inference-hub for all agents
+[privacy]
+mode = "private"
+
+[privacy.endpoints.private]
+base_url = "http://192.168.1.100:4200"
+api_key_env = "INFERENCE_HUB_KEY"
+
+[runtime]
+model = "small"
+```
+
+Set the API key in your environment:
+
+```bash
+export INFERENCE_HUB_KEY="mind-team-abc123..."
+```
+
+You can also use inference-hub for specific agents while keeping others on cloud models (hybrid mode):
+
+```toml
+# Hybrid: data agent runs locally, everything else on cloud
+[privacy]
+mode = "hybrid"
+
+[privacy.endpoints.private]
+base_url = "http://192.168.1.100:4200"
+api_key_env = "INFERENCE_HUB_KEY"
+
+[runtime]
+model = "claude-sonnet-4-5"
+
+[runtime.models.data_agent]
+endpoint = "private"
+model = "small"
+
+[runtime.models.tool_builder]
+endpoint = "private"
+model = "small"
+```
+
+On a dual-GPU machine (RTX Pro 6000 x2) with both models running, you can assign different agents to different models:
+
+```toml
+[privacy]
+mode = "private"
+
+[privacy.endpoints.private]
+base_url = "http://192.168.1.100:4200"
+api_key_env = "INFERENCE_HUB_KEY"
+
+[runtime]
+model = "small"
+
+[runtime.models.task_agent]
+endpoint = "private"
+model = "large"
+
+[runtime.models.planning_agent]
+endpoint = "private"
+model = "large"
+```
+
+Replace `192.168.1.100` with the actual IP of the machine running inference-hub (LAN IP or Tailscale IP).
+
 ### Remote access via Tailscale
 
-If the machine is on Tailscale, team members can use the Tailscale IP instead of the LAN IP. No port forwarding needed.
+If the machine is on Tailscale, team members can use the Tailscale IP instead of the LAN IP. No port forwarding needed. The Tailscale IP works from anywhere on your Tailnet.
+
+### Distributing API keys
+
+Setup generates team API keys and prints them. Give one key to each team member. They set it as an environment variable or use it directly in their client config. Keys are stored comma-separated in `.env` as `LITELLM_API_KEYS`.
+
+To regenerate keys, delete the `LITELLM_API_KEYS` line from `.env` and re-run `./hub setup`.
 
 ## Hub commands
 
 | Command | What it does |
 |---|---|
-| `./hub setup` | Install prerequisites, create `.env` |
+| `./hub setup` | Install prerequisites, detect hardware, generate keys, create `.env` |
 | `./hub start` | Start all services |
 | `./hub stop` | Stop all services |
 | `./hub restart` | Stop + start |
@@ -177,12 +245,54 @@ If the machine is on Tailscale, team members can use the Tailscale IP instead of
 
 This updates `.env`, downloads the model, and restarts the affected service in one step.
 
+## Setting up a new workstation
+
+The full process for bringing a fresh Ubuntu machine online:
+
+```bash
+# 1. Clone
+git clone git@github.com:YOUR_ORG/inference-hub.git
+cd inference-hub
+
+# 2. Setup (installs everything, detects hardware, generates keys)
+./hub setup
+# May need to log out/in if Docker was just installed, then re-run:
+# ./hub setup
+
+# 3. Set HuggingFace token
+sed -i 's/^HF_TOKEN=.*/HF_TOKEN=hf_your_token/' .env
+
+# 4. Pull models and start
+./hub pull-models
+./hub start
+
+# 5. Verify
+./hub status
+
+# 6. Test
+curl http://localhost:4200/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_MASTER_KEY" \
+  -d '{"model": "small", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+That's it. Share the team API keys with your colleagues.
+
 ## Troubleshooting
 
-**`./hub status` shows "not responding":**
-Model loading takes 1-2 minutes after start. Wait and check again. If it persists, check logs:
+**`./hub status` shows "not responding" for litellm:**
+LiteLLM takes a few seconds to start. Wait 10-15 seconds after `./hub start` and check again.
+
+**`./hub status` shows "not responding" for vllm-small:**
+Model loading takes 1-2 minutes after start. Wait and check again. If it persists:
 ```bash
 ./hub logs vllm-small
+```
+
+**CUDA version error on start:**
+Your NVIDIA driver is too old for the vLLM image. Run `./hub setup` — it auto-detects CUDA and pins the right image. If you need the latest vLLM, update your driver:
+```bash
+sudo apt-get update && sudo ubuntu-drivers autoinstall && sudo reboot
 ```
 
 **Container exits immediately:**
@@ -194,6 +304,9 @@ Run `./hub setup` again — it configures the Docker NVIDIA runtime.
 **Permission denied on Docker:**
 After setup installs Docker, you need to log out and back in for the `docker` group membership to take effect. Or run `newgrp docker` in your current shell.
 
+**Port 4200 already in use:**
+Change `LITELLM_PORT` in `.env` to another port and restart.
+
 ## Hardware reference
 
 | Hardware | VRAM | Recommended config |
@@ -201,3 +314,5 @@ After setup installs Docker, you need to log out and back in for the `docker` gr
 | RTX 4090 | 24GB | Small model only (gpt-oss-20b) |
 | RTX 5090 | 32GB | Small model only, or quantized 32B models |
 | RTX Pro 6000 x2 | 192GB | Small + large (gpt-oss-20b + gpt-oss-120b) |
+
+Setup auto-detects your hardware and configures `.env` accordingly. You can always override by editing `.env` or using `./hub set-model`.
