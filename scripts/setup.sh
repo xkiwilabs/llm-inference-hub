@@ -115,9 +115,30 @@ if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
     done < <(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits)
     TOTAL_VRAM_GB=$((TOTAL_VRAM_MB / 1024))
 
+    # Detect CUDA version supported by driver
+    CUDA_VERSION=$(nvidia-smi | grep -oP 'CUDA Version: \K[0-9]+\.[0-9]+' || echo "unknown")
+
     echo "  GPUs:       $GPU_COUNT x $GPU_NAME"
     echo "  VRAM/GPU:   $((GPU_VRAM_MB / 1024)) GB"
     echo "  Total VRAM: ${TOTAL_VRAM_GB} GB"
+    echo "  CUDA:       $CUDA_VERSION"
+    echo ""
+
+    # Set vLLM image tag based on CUDA version
+    CUDA_MAJOR=$(echo "$CUDA_VERSION" | cut -d. -f1)
+    CUDA_MINOR=$(echo "$CUDA_VERSION" | cut -d. -f2)
+    if [[ "$CUDA_MAJOR" -ge 13 ]] || { [[ "$CUDA_MAJOR" -eq 12 ]] && [[ "$CUDA_MINOR" -ge 9 ]]; }; then
+        update_env "VLLM_IMAGE_TAG" "latest"
+        echo "  vLLM image: latest (CUDA $CUDA_VERSION supported)"
+    elif [[ "$CUDA_MAJOR" -eq 12 ]] && [[ "$CUDA_MINOR" -ge 4 ]]; then
+        update_env "VLLM_IMAGE_TAG" "v0.8.4"
+        echo "  vLLM image: v0.8.4 (pinned for CUDA $CUDA_VERSION)"
+        echo "  Note: update NVIDIA driver to 570+ for latest vLLM and gpt-oss support"
+    else
+        update_env "VLLM_IMAGE_TAG" "v0.6.6"
+        echo "  vLLM image: v0.6.6 (pinned for CUDA $CUDA_VERSION)"
+        echo "  Warning: very old CUDA version, consider updating NVIDIA driver"
+    fi
     echo ""
 
     # Configure GPU indices
