@@ -19,6 +19,9 @@ else
     export LARGE_MODEL_REPLICAS=0
 fi
 
+# Generate litellm config from template
+envsubst < "$HUB_DIR/litellm/config.template.yaml" > "$HUB_DIR/litellm/config.yaml"
+
 echo "Starting inference hub..."
 echo "  Small model: ${SMALL_MODEL:-<not set>}"
 if [[ "${LARGE_MODEL_REPLICAS}" == "1" ]]; then

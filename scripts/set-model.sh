@@ -45,8 +45,9 @@ case "$SLOT" in
         echo "Pulling $MODEL..."
         $HF_CMD download "$MODEL"
 
-        # Restart small service
-        docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-small
+        # Regenerate litellm config and restart services
+        envsubst < "$HUB_DIR/litellm/config.template.yaml" > "$HUB_DIR/litellm/config.yaml"
+        docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-small litellm
         echo "Done. vllm-small restarting with $MODEL"
         ;;
 
@@ -74,9 +75,10 @@ case "$SLOT" in
             echo "Pulling $MODEL..."
             $HF_CMD download "$MODEL"
 
-            # Start/restart large service with replicas=1
+            # Regenerate litellm config and restart services
             export LARGE_MODEL_REPLICAS=1
-            docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-large
+            envsubst < "$HUB_DIR/litellm/config.template.yaml" > "$HUB_DIR/litellm/config.yaml"
+            docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-large litellm
             echo "Done. vllm-large restarting with $MODEL"
         fi
         ;;
