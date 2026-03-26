@@ -133,6 +133,53 @@ curl http://192.168.1.100:4200/v1/chat/completions \
   -d '{"model": "small", "messages": [{"role": "user", "content": "Hello"}]}'
 ```
 
+### JavaScript / TypeScript
+
+```typescript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "http://192.168.1.100:4200/v1",
+  apiKey: "mind-team-abc123...",
+});
+
+const response = await client.chat.completions.create({
+  model: "small",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(response.choices[0].message.content);
+```
+
+### Open WebUI
+
+[Open WebUI](https://github.com/open-webui/open-webui) gives you a ChatGPT-like browser interface for your models.
+
+1. Start Open WebUI pointing at inference-hub:
+   ```bash
+   docker run -d -p 3000:8080 \
+     -e OPENAI_API_BASE_URL=http://HOST_IP:4200/v1 \
+     -e OPENAI_API_KEY=mind-team-abc123... \
+     --add-host=host.docker.internal:host-gateway \
+     --name open-webui \
+     ghcr.io/open-webui/open-webui:main
+   ```
+   Replace `HOST_IP` with your machine's LAN IP (not `localhost` — the container needs to reach the host network).
+
+2. Open `http://localhost:3000` in your browser
+3. Select the `small` or `large` model from the model dropdown
+
+### Any OpenAI-compatible tool
+
+Inference-hub works with anything that supports a custom OpenAI base URL. The pattern is always the same:
+
+| Setting | Value |
+|---|---|
+| Base URL / API Base | `http://<machine-ip>:4200/v1` |
+| API Key | your `mind-team-xxx` key |
+| Model name | `small` or `large` |
+
+This includes: LangChain, LlamaIndex, AutoGen, CrewAI, Semantic Kernel, Continue.dev, Cursor, Aider, and any other tool with an OpenAI-compatible mode.
+
 ### Urika
 
 Inference-hub works as a private endpoint for [Urika](https://github.com/YOUR_ORG/urika) projects. This lets you run agents on your own hardware — nothing leaves your network.
