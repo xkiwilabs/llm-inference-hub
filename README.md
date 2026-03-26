@@ -6,7 +6,7 @@ A reproducible LLM inference stack built on vLLM + LiteLLM, designed for multi-G
 
 - **Multiple models running at once** (e.g. a fast 20B and a large 120B)
 - **Parallel request handling** via vLLM's continuous batching
-- **One unified API endpoint** for the whole team (`http://<machine>:4000/v1`)
+- **One unified API endpoint** for the whole team (`http://<machine>:4200/v1`)
 - **OpenAI-compatible** — works with any tool that speaks the OpenAI API
 - **One command to start** on any workstation
 
@@ -102,7 +102,7 @@ This starts the vLLM inference engine(s) and the LiteLLM gateway. Model loading 
 Wait until you see all services as healthy. Then test with a request:
 
 ```bash
-curl http://localhost:4000/v1/chat/completions \
+curl http://localhost:4200/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_MASTER_KEY" \
   -d '{
@@ -118,7 +118,7 @@ Replace `YOUR_MASTER_KEY` with the `LITELLM_MASTER_KEY` you set in `.env`.
 The API is OpenAI-compatible. Point any tool or library at:
 
 ```
-Base URL: http://<machine-ip>:4000/v1
+Base URL: http://<machine-ip>:4200/v1
 API Key:  your LITELLM_MASTER_KEY
 ```
 
@@ -132,7 +132,7 @@ Available model names:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://192.168.1.100:4000/v1",
+    base_url="http://192.168.1.100:4200/v1",
     api_key="sk-master-myteam-2026",
 )
 

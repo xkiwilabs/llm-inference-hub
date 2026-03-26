@@ -159,6 +159,7 @@ if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
     fi
 
     update_env "GPU_MEMORY_UTILIZATION" "0.90"
+    update_env "LITELLM_PORT" "4200"
 
     # Choose models based on total VRAM
     if [[ "$TOTAL_VRAM_GB" -ge 160 ]]; then
