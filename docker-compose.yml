@@ -6,6 +6,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=${SMALL_MODEL_GPU:-0}
       - HF_TOKEN=${HF_TOKEN}
       - VLLM_MXFP4_USE_MARLIN=1
+      - VLLM_ENABLE_CUDA_COMPATIBILITY=1
     volumes:
       - ${HF_CACHE_DIR:-${HOME}/.cache/huggingface}:/root/.cache/huggingface
     command: >
@@ -30,6 +31,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=${LARGE_MODEL_GPUS:-0,1}
       - HF_TOKEN=${HF_TOKEN}
       - VLLM_MXFP4_USE_MARLIN=1
+      - VLLM_ENABLE_CUDA_COMPATIBILITY=1
     volumes:
       - ${HF_CACHE_DIR:-${HOME}/.cache/huggingface}:/root/.cache/huggingface
     command: >
