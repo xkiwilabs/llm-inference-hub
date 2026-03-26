@@ -22,6 +22,7 @@ Commands:
   status                    Show service status, GPU utilization, and health
   pull-models               Download models defined in .env
   set-model <slot> <model>  Change a model (slot: small|large, or "large --clear")
+  metrics                   Show throughput, latency, and tokens/sec
   logs [service]            Tail service logs
   help                      Show this help message
 EOF
@@ -38,6 +39,7 @@ case "$cmd" in
     status)     source "$HUB_DIR/scripts/status.sh" ;;
     pull-models) source "$HUB_DIR/scripts/pull-models.sh" ;;
     set-model)  source "$HUB_DIR/scripts/set-model.sh" "$@" ;;
+    metrics)    source "$HUB_DIR/scripts/metrics.sh" ;;
     logs)       docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" logs -f "$@" ;;
     help)       usage ;;
     *)          echo "Error: unknown command '$cmd'" >&2; usage; exit 1 ;;
