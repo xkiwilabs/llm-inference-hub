@@ -41,5 +41,10 @@ if [[ -n "${LARGE_MODEL:-}" ]]; then
     check_endpoint "vllm-large" "http://localhost:8002/health"
 fi
 
-# LiteLLM gateway
-check_endpoint "litellm" "http://localhost:${LITELLM_PORT:-4000}/health"
+# LiteLLM gateway — requires API key for health check
+if curl -sf --max-time 5 -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-}" \
+    "http://localhost:${LITELLM_PORT:-4200}/health" > /dev/null 2>&1; then
+    echo "  litellm: healthy"
+else
+    echo "  litellm: not responding"
+fi
