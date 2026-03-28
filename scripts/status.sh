@@ -2,6 +2,15 @@
 # Called by hub status
 # Shows: container states, GPU utilization, endpoint health checks.
 
+echo "=== Models ==="
+echo "  small: ${SMALL_MODEL:-<not set>}"
+if [[ -n "${LARGE_MODEL:-}" ]]; then
+    echo "  large: ${LARGE_MODEL}"
+else
+    echo "  large: (disabled)"
+fi
+
+echo ""
 echo "=== Container Status ==="
 docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 
