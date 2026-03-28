@@ -48,3 +48,12 @@ if curl -sf --max-time 5 -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-}" \
 else
     echo "  litellm: not responding"
 fi
+
+echo ""
+echo "=== Connect ==="
+PORT="${LITELLM_PORT:-4200}"
+LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+[[ -n "$LAN_IP" ]] && echo "  LAN:       http://${LAN_IP}:${PORT}/v1"
+TS_IP=$(tailscale ip -4 2>/dev/null)
+[[ -n "$TS_IP" ]] && echo "  Tailscale: http://${TS_IP}:${PORT}/v1"
+echo "  Local:     http://localhost:${PORT}/v1"
