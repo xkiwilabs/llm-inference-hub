@@ -194,7 +194,7 @@ echo "=== API Key Setup ==="
 echo ""
 
 # Generate master key if not already set
-CURRENT_MASTER=$(grep "^LITELLM_MASTER_KEY=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- | sed 's/#.*//' | xargs)
+CURRENT_MASTER=$(grep "^LITELLM_MASTER_KEY=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- | sed 's/#.*//' | xargs || true)
 if [[ -z "$CURRENT_MASTER" ]]; then
     MASTER_KEY="sk-master-$(openssl rand -hex 16)"
     update_env "LITELLM_MASTER_KEY" "$MASTER_KEY"
@@ -205,7 +205,7 @@ else
 fi
 
 # Generate Postgres password if not already set
-CURRENT_PG_PASS=$(grep "^POSTGRES_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- | sed 's/#.*//' | xargs)
+CURRENT_PG_PASS=$(grep "^POSTGRES_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- | sed 's/#.*//' | xargs || true)
 if [[ -z "$CURRENT_PG_PASS" ]]; then
     PG_PASS="$(openssl rand -hex 16)"
     update_env "POSTGRES_PASSWORD" "$PG_PASS"
