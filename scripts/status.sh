@@ -58,6 +58,14 @@ else
     echo "  litellm: not responding"
 fi
 
+# Postgres database
+if docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" \
+    exec -T postgres pg_isready -U litellm > /dev/null 2>&1; then
+    echo "  postgres: healthy"
+else
+    echo "  postgres: not responding"
+fi
+
 echo ""
 echo "=== Connect ==="
 PORT="${LITELLM_PORT:-4200}"

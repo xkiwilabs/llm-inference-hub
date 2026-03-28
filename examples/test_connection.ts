@@ -7,7 +7,7 @@
  *
  * Set these environment variables before running:
  *   export INFERENCE_HUB_URL="http://192.168.1.100:4200/v1"
- *   export INFERENCE_HUB_KEY="mind-team-your-key-here"
+ *   export INFERENCE_HUB_KEY="your-api-key"
  */
 
 import OpenAI from "openai";

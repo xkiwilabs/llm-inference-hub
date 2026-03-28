@@ -4,7 +4,7 @@ How to connect to inference-hub from different languages, tools, and frameworks.
 
 For all examples below, replace:
 - `SERVER_IP` with the machine's IP address (or `localhost` if on the same machine)
-- `mind-team-YOUR_KEY` with your actual API key
+- `YOUR_API_KEY` with your actual API key (from `./hub add-key`)
 
 ## Python
 
@@ -13,7 +13,7 @@ For all examples below, replace:
 ```bash
 pip install openai
 export INFERENCE_HUB_URL="http://SERVER_IP:4200/v1"
-export INFERENCE_HUB_KEY="mind-team-YOUR_KEY"
+export INFERENCE_HUB_KEY="YOUR_API_KEY"
 python examples/test_connection.py
 ```
 
@@ -42,7 +42,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="http://SERVER_IP:4200/v1",
-    api_key="mind-team-YOUR_KEY",
+    api_key="YOUR_API_KEY",
 )
 
 response = client.chat.completions.create(
@@ -62,7 +62,7 @@ print(response.choices[0].message.content)
 ```bash
 curl http://SERVER_IP:4200/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer mind-team-YOUR_KEY" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
     "model": "small",
     "messages": [{"role": "user", "content": "Hello!"}]
@@ -73,7 +73,7 @@ curl http://SERVER_IP:4200/v1/chat/completions \
 
 ```bash
 curl http://SERVER_IP:4200/v1/models \
-  -H "Authorization: Bearer mind-team-YOUR_KEY"
+  -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ### Streaming
@@ -81,7 +81,7 @@ curl http://SERVER_IP:4200/v1/models \
 ```bash
 curl http://SERVER_IP:4200/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer mind-team-YOUR_KEY" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
     "model": "small",
     "stream": true,
@@ -100,7 +100,7 @@ import OpenAI from "openai";
 
 const client = new OpenAI({
   baseURL: "http://SERVER_IP:4200/v1",
-  apiKey: "mind-team-YOUR_KEY",
+  apiKey: "YOUR_API_KEY",
 });
 
 const response = await client.chat.completions.create({
@@ -117,7 +117,7 @@ console.log(response.choices[0].message.content);
 ```bash
 docker run -d -p 3000:8080 \
   -e OPENAI_API_BASE_URL=http://HOST_IP:4200/v1 \
-  -e OPENAI_API_KEY=mind-team-YOUR_KEY \
+  -e OPENAI_API_KEY=YOUR_API_KEY \
   --add-host=host.docker.internal:host-gateway \
   --name open-webui \
   ghcr.io/open-webui/open-webui:main
@@ -125,90 +125,72 @@ docker run -d -p 3000:8080 \
 
 Replace `HOST_IP` with the server's LAN IP (not `localhost` — the container needs to reach the host network). Then open `http://localhost:3000` in your browser and select the `small` or `large` model.
 
-## Urika
+## Agent Frameworks
 
-Inference-hub works as a private endpoint for [Urika](https://github.com/YOUR_ORG/urika) projects. Run agents on your own hardware — nothing leaves your network.
+Inference-hub works as a private backend for AI agent frameworks. Both OpenAI and Anthropic API patterns are supported.
 
-### Fully private
+### OpenAI-compatible agents
 
-All agents use inference-hub:
+Any framework using the OpenAI SDK:
 
-```toml
-# urika.toml
-[privacy]
-mode = "private"
+```python
+from openai import OpenAI
 
-[privacy.endpoints.private]
-base_url = "http://SERVER_IP:4200"
-api_key_env = "INFERENCE_HUB_KEY"
+client = OpenAI(
+    base_url="http://SERVER_IP:4200/v1",
+    api_key="YOUR_API_KEY",
+)
 
-[runtime]
-model = "small"
+response = client.chat.completions.create(
+    model="small",
+    messages=[{"role": "user", "content": "Hello"}],
+)
 ```
+
+### Anthropic-compatible agents
+
+Any framework using the Anthropic SDK:
+
+```python
+import anthropic
+
+client = anthropic.Anthropic(
+    base_url="http://SERVER_IP:4200/anthropic",
+    api_key="YOUR_API_KEY",
+)
+
+message = client.messages.create(
+    model="small",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(message.content[0].text)
+```
+
+### Environment variable pattern
+
+Most frameworks accept endpoint configuration via environment variables:
 
 ```bash
-export INFERENCE_HUB_KEY="mind-team-YOUR_KEY"
-urika run my-project
+# For OpenAI-compatible frameworks
+export OPENAI_BASE_URL="http://SERVER_IP:4200/v1"
+export OPENAI_API_KEY="YOUR_API_KEY"
+
+# For Anthropic-compatible frameworks
+export ANTHROPIC_BASE_URL="http://SERVER_IP:4200/anthropic"
+export ANTHROPIC_API_KEY="YOUR_API_KEY"
 ```
 
-### Hybrid (sensitive data stays local)
+Both endpoints serve the same models. Use whichever matches your framework's SDK.
 
-Data agent runs on inference-hub, everything else on cloud:
-
-```toml
-# urika.toml
-[privacy]
-mode = "hybrid"
-
-[privacy.endpoints.private]
-base_url = "http://SERVER_IP:4200"
-api_key_env = "INFERENCE_HUB_KEY"
-
-[runtime]
-model = "claude-sonnet-4-5"
-
-[runtime.models.data_agent]
-endpoint = "private"
-model = "small"
-
-[runtime.models.tool_builder]
-endpoint = "private"
-model = "small"
-```
-
-### Per-agent model assignment (dual GPU)
-
-On a machine with both models running, assign heavy-reasoning agents to the large model:
-
-```toml
-# urika.toml
-[privacy]
-mode = "private"
-
-[privacy.endpoints.private]
-base_url = "http://SERVER_IP:4200"
-api_key_env = "INFERENCE_HUB_KEY"
-
-[runtime]
-model = "small"
-
-[runtime.models.task_agent]
-endpoint = "private"
-model = "large"
-
-[runtime.models.planning_agent]
-endpoint = "private"
-model = "large"
-```
-
-## Any OpenAI-compatible tool
+## Any OpenAI- or Anthropic-compatible tool
 
 The pattern is always the same:
 
-| Setting | Value |
-|---|---|
-| Base URL / API Base | `http://SERVER_IP:4200/v1` |
-| API Key | `mind-team-YOUR_KEY` |
-| Model name | `small` or `large` |
+| Setting | OpenAI SDK | Anthropic SDK |
+|---|---|---|
+| Base URL / API Base | `http://SERVER_IP:4200/v1` | `http://SERVER_IP:4200/anthropic/v1` |
+| API Key | `YOUR_API_KEY` | `YOUR_API_KEY` |
+| Model name | `small` or `large` | `small` or `large` |
 
-This includes LangChain, LlamaIndex, AutoGen, CrewAI, Semantic Kernel, Continue.dev, Cursor, Aider, and anything else with an OpenAI-compatible mode.
+This includes LangChain, LlamaIndex, AutoGen, CrewAI, Semantic Kernel, Continue.dev, Cursor, Aider, and anything else with an OpenAI- or Anthropic-compatible mode.

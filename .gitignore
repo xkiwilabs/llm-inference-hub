@@ -2,3 +2,4 @@
 *.log
 litellm/config.yaml
 .archive/
+docs/plans/

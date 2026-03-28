@@ -16,14 +16,7 @@ Everything else is installed automatically by `./hub setup`.
 ### 1. Clone the repo
 
 ```bash
-git clone git@github.com:YOUR_ORG/inference-hub.git
-cd inference-hub
-```
-
-Or with HTTPS:
-
-```bash
-git clone https://github.com/YOUR_ORG/inference-hub.git
+git clone <your-repo-url>
 cd inference-hub
 ```
 
@@ -42,7 +35,6 @@ This does everything automatically (requires `sudo`):
 - Detects your GPU hardware (count, VRAM, CUDA version)
 - Picks the right vLLM Docker image for your NVIDIA driver
 - Chooses appropriate models for your VRAM
-- Generates a master API key and team API keys (default: 5)
 - Creates your `.env` config file with everything pre-filled
 
 If something is already installed, it skips it. Safe to run multiple times.
@@ -95,11 +87,24 @@ llm-inference-hub-vllm-small-1   Up 2 minutes (healthy)   127.0.0.1:8001->8001/t
   litellm: healthy
 ```
 
-### 7. Share API keys
+### 7. Create API keys
 
-During setup, team API keys were printed to the screen. They are also stored in `.env` as `LITELLM_API_KEYS`. Give one key to each team member.
+Create keys for your team:
 
-To regenerate keys, delete the `LITELLM_API_KEYS` line from `.env` and re-run `./hub setup`.
+```bash
+./hub add-key alice
+./hub add-key bob
+```
+
+Share the printed keys with your team. Keys are stored in the database and tracked per-user.
+
+Manage keys anytime:
+
+```bash
+./hub list-keys          # see all keys and usage
+./hub delete-key alice   # revoke a key
+./hub usage              # see spend summary
+```
 
 ## What setup auto-detects
 

@@ -63,7 +63,7 @@ The model name in the LiteLLM config doesn't match what vLLM loaded. This happen
 
 ## Client gets "No api key passed in"
 
-You need to pass an API key with every request. Use the `Authorization: Bearer` header with your `mind-team-xxx` key or the master key.
+You need to pass an API key with every request. Use the `Authorization: Bearer` header with the API key you received from `./hub add-key`.
 
 ## Can't connect from another machine
 
@@ -71,3 +71,11 @@ You need to pass an API key with every request. Use the `Authorization: Bearer` 
 2. Check the port is open: `curl http://SERVER_IP:4200/health` from the client
 3. If using Tailscale, make sure both machines are on the same Tailnet
 4. The vLLM ports (8001, 8002) are localhost-only by design — clients connect through LiteLLM on port 4200
+
+## Database issues
+
+If `./hub add-key` or `./hub list-keys` fails:
+
+1. Check postgres is running: `./hub status`
+2. Check logs: `./hub logs postgres`
+3. Reset the database (destroys all keys): `docker volume rm llm-inference-hub_pgdata && ./hub restart`

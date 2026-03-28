@@ -22,6 +22,10 @@ Commands:
   status                    Show service status, GPU utilization, and health
   pull-models               Download models defined in .env
   set-model <slot> <model>  Change a model (slot: small|large, or "large --clear")
+  add-key <name>            Create an API key for a user
+  list-keys                 List all API keys and usage
+  delete-key <name>         Delete a user's API key
+  usage [name]              Show usage summary (or per-user detail)
   metrics                   Show throughput, latency, and tokens/sec
   logs [service]            Tail service logs
   help                      Show this help message
@@ -39,6 +43,10 @@ case "$cmd" in
     status)     source "$HUB_DIR/scripts/status.sh" ;;
     pull-models) source "$HUB_DIR/scripts/pull-models.sh" ;;
     set-model)  source "$HUB_DIR/scripts/set-model.sh" "$@" ;;
+    add-key)    source "$HUB_DIR/scripts/keys.sh" add "$@" ;;
+    list-keys)  source "$HUB_DIR/scripts/keys.sh" list "$@" ;;
+    delete-key) source "$HUB_DIR/scripts/keys.sh" delete "$@" ;;
+    usage)      source "$HUB_DIR/scripts/keys.sh" usage "$@" ;;
     metrics)    source "$HUB_DIR/scripts/metrics.sh" ;;
     logs)       docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" logs -f "$@" ;;
     help)       usage ;;
