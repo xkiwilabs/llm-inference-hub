@@ -18,10 +18,24 @@ Model loading takes 1-2 minutes after start. Wait and check again. If it persist
 nvidia-container-cli: requirement error: unsatisfied condition: cuda>=12.9
 ```
 
-Your NVIDIA driver is too old for the vLLM image. Run `./hub setup` — it auto-detects CUDA and pins a compatible image. If you need the latest vLLM and gpt-oss models, update your driver:
+Your NVIDIA driver is too old for the vLLM image. Install driver 570 specifically (do **not** use `ubuntu-drivers autoinstall` — it may install a driver that's too new):
 
 ```bash
-sudo apt-get update && sudo ubuntu-drivers autoinstall && sudo reboot
+sudo apt-get update && sudo apt-get install nvidia-driver-570 && sudo reboot
+```
+
+Then re-run `./hub setup` to auto-detect the new CUDA version.
+
+## CUDA "unsupported display driver" error (Error 803)
+
+```
+RuntimeError: Error 803: system has unsupported display driver / cuda driver combination
+```
+
+Your NVIDIA driver is **too new** for the vLLM Docker image. This typically happens with driver 580+ (CUDA 13.0). Downgrade to driver 570:
+
+```bash
+sudo apt-get install nvidia-driver-570 && sudo reboot
 ```
 
 ## Container exits immediately

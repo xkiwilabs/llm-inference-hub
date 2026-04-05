@@ -1,9 +1,10 @@
 services:
   vllm-small:
-    image: vllm/vllm-openai:${VLLM_IMAGE_TAG:-v0.8.4}
+    image: vllm/vllm-openai:${VLLM_IMAGE_TAG:-v0.10.2}
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=${SMALL_MODEL_GPU:-0}
+      - NVIDIA_DISABLE_REQUIRE=true
       - HF_TOKEN=${HF_TOKEN}
       - VLLM_MXFP4_USE_MARLIN=1
       - VLLM_ENABLE_CUDA_COMPATIBILITY=1
@@ -27,10 +28,11 @@ services:
     restart: unless-stopped
 
   vllm-large:
-    image: vllm/vllm-openai:${VLLM_IMAGE_TAG:-v0.8.4}
+    image: vllm/vllm-openai:${VLLM_IMAGE_TAG:-v0.10.2}
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=${LARGE_MODEL_GPUS:-0,1}
+      - NVIDIA_DISABLE_REQUIRE=true
       - HF_TOKEN=${HF_TOKEN}
       - VLLM_MXFP4_USE_MARLIN=1
       - VLLM_ENABLE_CUDA_COMPATIBILITY=1

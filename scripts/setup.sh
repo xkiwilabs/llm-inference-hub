@@ -12,12 +12,13 @@ echo "[1/5] Checking NVIDIA drivers..."
 if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
     echo "  OK: $(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1)"
 else
-    echo "  Installing NVIDIA drivers..."
+    echo "  Installing NVIDIA driver 570 (required for vLLM + gpt-oss models)..."
     need_sudo=true
     sudo apt-get update
-    sudo apt-get install -y ubuntu-drivers-common
-    sudo ubuntu-drivers autoinstall
-    echo "  Installed. A REBOOT may be required."
+    sudo apt-get install -y nvidia-driver-570
+    echo "  Installed. A REBOOT is required before continuing."
+    echo "  After reboot, re-run: ./hub setup"
+    exit 0
 fi
 
 # --- Docker ---
@@ -127,13 +128,21 @@ if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
     # Set vLLM image tag based on CUDA version
     CUDA_MAJOR=$(echo "$CUDA_VERSION" | cut -d. -f1)
     CUDA_MINOR=$(echo "$CUDA_VERSION" | cut -d. -f2)
-    if [[ "$CUDA_MAJOR" -ge 13 ]] || { [[ "$CUDA_MAJOR" -eq 12 ]] && [[ "$CUDA_MINOR" -ge 9 ]]; }; then
-        update_env "VLLM_IMAGE_TAG" "latest"
-        echo "  vLLM image: latest (CUDA $CUDA_VERSION supported)"
+    if [[ "$CUDA_MAJOR" -ge 13 ]]; then
+        # CUDA 13+ (driver 580+) is too new for current vLLM images.
+        # Best option: downgrade to driver 570 (CUDA 12.8) for full compatibility.
+        update_env "VLLM_IMAGE_TAG" "v0.10.2"
+        echo "  vLLM image: v0.10.2 (CUDA $CUDA_VERSION)"
+        echo "  WARNING: CUDA 13+ may cause issues with vLLM on consumer GPUs."
+        echo "  Recommended: install nvidia-driver-570 (CUDA 12.8) instead:"
+        echo "    sudo apt-get install nvidia-driver-570 && sudo reboot"
+    elif [[ "$CUDA_MAJOR" -eq 12 ]] && [[ "$CUDA_MINOR" -ge 8 ]]; then
+        update_env "VLLM_IMAGE_TAG" "v0.10.2"
+        echo "  vLLM image: v0.10.2 (CUDA $CUDA_VERSION — supports gpt-oss models)"
     elif [[ "$CUDA_MAJOR" -eq 12 ]] && [[ "$CUDA_MINOR" -ge 4 ]]; then
         update_env "VLLM_IMAGE_TAG" "v0.8.4"
         echo "  vLLM image: v0.8.4 (pinned for CUDA $CUDA_VERSION)"
-        echo "  Note: update NVIDIA driver to 570+ for latest vLLM and gpt-oss support"
+        echo "  Note: install nvidia-driver-570 for gpt-oss model support"
     else
         update_env "VLLM_IMAGE_TAG" "v0.6.6"
         echo "  vLLM image: v0.6.6 (pinned for CUDA $CUDA_VERSION)"
