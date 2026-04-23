@@ -110,10 +110,16 @@ Manage keys anytime:
 
 | GPUs | VRAM | Models configured | Tensor parallel |
 |---|---|---|---|
-| 1 GPU, < 30GB | e.g. RTX 4090 | Small only | 1 |
-| 1 GPU, 30-79GB | e.g. RTX 5090 | Small only | 1 |
+| 1 GPU, < 30GB | e.g. RTX 4090 | Small only (Gemma 4 E4B) | 1 |
+| 1 GPU, 30-79GB | e.g. RTX 5090 | Small only (Gemma 4 E4B) | 1 |
 | Any, 80-159GB | e.g. 2x 48GB | Small + large (conservative memory) | GPU count |
-| Any, 160GB+ | e.g. 2x RTX Pro 6000 | Small + large | GPU count |
+| Any, 160GB+ | e.g. 2x RTX Pro 6000 | Small + large (Gemma 4 E4B + 26B MoE) | GPU count |
+
+The default stack is **Google Gemma 4**:
+- `small` = `google/gemma-4-E4B-it` — text + image + audio, ~8B params
+- `large` = `google/gemma-4-26B-A4B-it` — text + image, 26B MoE (4B active)
+
+See [Managing Models](04-managing-models.md) to swap in other Gemma variants or non-Gemma models.
 
 ## Overriding defaults
 

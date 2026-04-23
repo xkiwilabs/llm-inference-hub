@@ -12,7 +12,7 @@ echo "[1/5] Checking NVIDIA drivers..."
 if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
     echo "  OK: $(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1)"
 else
-    echo "  Installing NVIDIA driver 570 (required for vLLM + gpt-oss models)..."
+    echo "  Installing NVIDIA driver 570 (required for modern vLLM images)..."
     need_sudo=true
     sudo apt-get update
     sudo apt-get install -y nvidia-driver-570
@@ -138,11 +138,11 @@ if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
         echo "    sudo apt-get install nvidia-driver-570 && sudo reboot"
     elif [[ "$CUDA_MAJOR" -eq 12 ]] && [[ "$CUDA_MINOR" -ge 8 ]]; then
         update_env "VLLM_IMAGE_TAG" "v0.10.2"
-        echo "  vLLM image: v0.10.2 (CUDA $CUDA_VERSION — supports gpt-oss models)"
+        echo "  vLLM image: v0.10.2 (CUDA $CUDA_VERSION)"
     elif [[ "$CUDA_MAJOR" -eq 12 ]] && [[ "$CUDA_MINOR" -ge 4 ]]; then
         update_env "VLLM_IMAGE_TAG" "v0.8.4"
         echo "  vLLM image: v0.8.4 (pinned for CUDA $CUDA_VERSION)"
-        echo "  Note: install nvidia-driver-570 for gpt-oss model support"
+        echo "  Note: install nvidia-driver-570 for the latest vLLM features"
     else
         update_env "VLLM_IMAGE_TAG" "v0.6.6"
         echo "  vLLM image: v0.6.6 (pinned for CUDA $CUDA_VERSION)"
@@ -167,31 +167,39 @@ if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
         update_env "TENSOR_PARALLEL_SIZE" "$GPU_COUNT"
     fi
 
-    update_env "GPU_MEMORY_UTILIZATION" "0.90"
+    update_env "MAX_MODEL_LEN" "32768"
+    update_env "TOOL_CALL_PARSER" "gemma4"
     update_env "LITELLM_PORT" "4200"
 
-    # Choose models based on total VRAM
+    # Choose models based on total VRAM. Defaults are Google Gemma 4:
+    #   small = E4B (text + image + audio, ~8B params)
+    #   large = 26B-A4B MoE (text + image, 4B active)
     if [[ "$TOTAL_VRAM_GB" -ge 160 ]]; then
-        # 160GB+ (e.g. 2x RTX Pro 6000): both models
-        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
-        update_env "LARGE_MODEL" "openai/gpt-oss-120b"
-        echo "  Config: small (gpt-oss-20b) + large (gpt-oss-120b)"
+        # 160GB+ (e.g. 2x RTX Pro 6000): both models, generous memory
+        update_env "SMALL_MODEL" "google/gemma-4-E4B-it"
+        update_env "LARGE_MODEL" "google/gemma-4-26B-A4B-it"
+        update_env "SMALL_GPU_MEM_UTIL" "0.25"
+        update_env "LARGE_GPU_MEM_UTIL" "0.65"
+        echo "  Config: small (gemma-4-E4B) + large (gemma-4-26B-A4B MoE)"
     elif [[ "$TOTAL_VRAM_GB" -ge 80 ]]; then
         # 80-159GB (e.g. single 96GB, or 2x48GB): small + large fits tight
-        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
-        update_env "LARGE_MODEL" "openai/gpt-oss-120b"
-        update_env "GPU_MEMORY_UTILIZATION" "0.85"
-        echo "  Config: small (gpt-oss-20b) + large (gpt-oss-120b), conservative memory (0.85)"
+        update_env "SMALL_MODEL" "google/gemma-4-E4B-it"
+        update_env "LARGE_MODEL" "google/gemma-4-26B-A4B-it"
+        update_env "SMALL_GPU_MEM_UTIL" "0.20"
+        update_env "LARGE_GPU_MEM_UTIL" "0.55"
+        echo "  Config: small (gemma-4-E4B) + large (gemma-4-26B-A4B MoE), conservative memory"
     elif [[ "$TOTAL_VRAM_GB" -ge 30 ]]; then
         # 30-79GB (e.g. RTX 5090 32GB, or 2x24GB): small model only
-        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
+        update_env "SMALL_MODEL" "google/gemma-4-E4B-it"
         update_env "LARGE_MODEL" ""
-        echo "  Config: small only (gpt-oss-20b) — not enough VRAM for large model"
+        update_env "SMALL_GPU_MEM_UTIL" "0.60"
+        echo "  Config: small only (gemma-4-E4B) — not enough VRAM for large model"
     else
-        # <30GB (e.g. RTX 4090 24GB): small model only
-        update_env "SMALL_MODEL" "openai/gpt-oss-20b"
+        # <30GB (e.g. RTX 4090 24GB): small model only, tight memory
+        update_env "SMALL_MODEL" "google/gemma-4-E4B-it"
         update_env "LARGE_MODEL" ""
-        echo "  Config: small only (gpt-oss-20b) — not enough VRAM for large model"
+        update_env "SMALL_GPU_MEM_UTIL" "0.80"
+        echo "  Config: small only (gemma-4-E4B) — not enough VRAM for large model"
     fi
 
     echo "  GPU settings written to .env"

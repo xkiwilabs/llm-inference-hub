@@ -50,13 +50,18 @@ Everything goes through the `hub` CLI at the repo root:
 - `litellm/config.yaml` — generated from template by `scripts/start.sh` (gitignored).
 - `docker-compose.yml` — service definitions. Identical across all machines.
 
-**Key `.env` variables:** `SMALL_MODEL`, `LARGE_MODEL` (blank to skip), `TENSOR_PARALLEL_SIZE`, `SMALL_MODEL_GPU`, `LARGE_MODEL_GPUS`, `GPU_MEMORY_UTILIZATION` (0.90 for discrete GPUs), `LITELLM_MASTER_KEY`, `POSTGRES_PASSWORD`.
+**Key `.env` variables:** `SMALL_MODEL`, `LARGE_MODEL` (blank to skip), `TENSOR_PARALLEL_SIZE`, `SMALL_MODEL_GPU`, `LARGE_MODEL_GPUS`, `SMALL_GPU_MEM_UTIL`, `LARGE_GPU_MEM_UTIL`, `MAX_MODEL_LEN`, `TOOL_CALL_PARSER`, `LITELLM_MASTER_KEY`, `POSTGRES_PASSWORD`.
 
 **The large model service** uses `deploy.replicas: ${LARGE_MODEL_REPLICAS:-0}`. The `hub` script auto-sets this to 1 when `LARGE_MODEL` is non-empty.
 
 **Model cache:** shared HuggingFace cache at `~/.cache/huggingface`, mounted into vLLM containers.
 
-**Default models:** `openai/gpt-oss-20b` (small), `openai/gpt-oss-120b` (large). Both are MoE with native MXFP4 quantization. `VLLM_MXFP4_USE_MARLIN=1` is set in compose for Ampere GPU compatibility.
+**Default models:** `google/gemma-4-E4B-it` (small) and `google/gemma-4-26B-A4B-it` (large).
+- Small (E4B): ~8B params, text + image + **audio**. Runs on GPU 0.
+- Large (26B MoE, 4B active): text + image only. Runs on GPU 1.
+- Tool calling: `--tool-call-parser gemma4 --reasoning-parser gemma4` with `examples/tool_chat_template_gemma4.jinja`. `TOOL_CALL_PARSER` in `.env` controls both.
+- Large service enables `--kv-cache-dtype fp8` for Blackwell KV-cache compression.
+- Only E2B / E4B accept audio input — 26B MoE and 31B dense are text + image only.
 
 **API key management:** Keys are stored in PostgreSQL via LiteLLM's virtual key system. Admin creates keys with `./hub add-key <name>`. Per-user usage is tracked automatically.
 

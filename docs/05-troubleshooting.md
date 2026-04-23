@@ -42,9 +42,21 @@ sudo apt-get install nvidia-driver-570 && sudo reboot
 
 Usually a GPU memory issue. Try:
 
-1. Lower `GPU_MEMORY_UTILIZATION` in `.env` to `0.85`
-2. Use a smaller model
+1. Lower `SMALL_GPU_MEM_UTIL` / `LARGE_GPU_MEM_UTIL` in `.env`
+2. Use a smaller model (e.g. `google/gemma-4-E2B-it` for the small slot)
 3. Check logs: `./hub logs vllm-small`
+
+## "No available memory for the cache blocks"
+
+vLLM couldn't fit the KV cache after loading weights. Either bump the corresponding `*_GPU_MEM_UTIL` in `.env`, or lower `MAX_MODEL_LEN` (default 32768). Context length scales KV cache linearly.
+
+## 400 error when sending audio
+
+```
+Server rejected the request (400): ... audio not supported ...
+```
+
+Audio input only works on Gemma 4 **E2B** or **E4B**. The default `small` model is E4B (audio-capable); the default `large` model is 26B MoE and is text + image only. Retry with `--model small`, or swap your small model to an E-variant. See [Managing Models](04-managing-models.md).
 
 ## "NVIDIA runtime not found"
 

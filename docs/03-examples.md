@@ -35,6 +35,25 @@ python examples/streaming.py
 
 Watch tokens arrive in real time.
 
+### Image input (vision)
+
+```bash
+python examples/multimodal.py --file path/to/photo.jpg
+python examples/multimodal.py --file https://example.com/photo.jpg --prompt "What breed is this dog?"
+python examples/multimodal.py --file diagram.png --model large
+```
+
+Sends an image (local file or URL) alongside a text prompt. All default Gemma 4 models accept images — `small` (E4B) and `large` (26B MoE).
+
+### Audio input
+
+```bash
+python examples/audio.py --file clip.wav
+python examples/audio.py --file speech.mp3 --prompt "Translate this to French."
+```
+
+Audio requires a Gemma 4 **E2B** or **E4B** model. The default `small` model (Gemma 4 E4B) supports audio out of the box. The `large` model (26B MoE) is text + image only and will return a 400 on audio input.
+
 ### In your own code
 
 ```python
