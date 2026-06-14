@@ -65,6 +65,7 @@ Works with any OpenAI- or Anthropic-compatible client — Python, JavaScript, cu
 | `./hub set-model large --clear` | Disable the large model |
 | `./hub add-key <name>` | Create a named API key |
 | `./hub list-keys` | List all API keys and usage |
+| `./hub show-key <name>` | Rotate a key and print the new token (old token is revoked) |
 | `./hub delete-key <name>` | Revoke an API key |
 | `./hub usage [name]` | Show spend/token usage summary |
 | `./hub metrics` | Show live model and request metrics |

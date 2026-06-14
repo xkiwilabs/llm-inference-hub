@@ -30,6 +30,7 @@ Everything goes through the `hub` CLI at the repo root:
 ./hub set-model large --clear        # disable large model
 ./hub add-key <name>                 # create an API key for a user
 ./hub list-keys                      # list all API keys and usage
+./hub show-key <name>                # rotate and print a user's API key (old token revoked)
 ./hub delete-key <name>              # delete a user's API key
 ./hub usage [name]                   # show usage summary (or per-user detail)
 ./hub metrics                        # show throughput, latency, and tokens/sec

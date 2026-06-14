@@ -64,7 +64,7 @@ else:
         check_litellm
 
         RESPONSE=$(curl -sf --max-time 10 \
-            -X GET "$LITELLM_URL/key/list" \
+            -X GET "$LITELLM_URL/key/list?return_full_object=true&include_team_keys=true" \
             -H "Authorization: Bearer $MASTER_KEY" 2>&1)
 
         if [[ $? -ne 0 || -z "$RESPONSE" ]]; then
@@ -86,6 +86,8 @@ else:
 # Filter out the master key (no alias) and collect virtual keys
 virtual_keys = []
 for k in keys:
+    if not isinstance(k, dict):
+        continue
     alias = k.get('key_alias') or k.get('key_name') or ''
     token = k.get('token', k.get('key', ''))
     spend = k.get('spend', 0.0)
@@ -106,18 +108,18 @@ for alias, token, spend in virtual_keys:
 "
         ;;
 
-    delete)
+    show)
         NAME="${1:-}"
         if [[ -z "$NAME" ]]; then
-            echo "Usage: ./hub delete-key <name>"
+            echo "Usage: ./hub show-key <name>"
+            echo "Rotates the key and prints the new token. The old token will stop working."
             exit 1
         fi
 
         check_litellm
 
-        # First, find the key token by alias
         RESPONSE=$(curl -sf --max-time 10 \
-            -X GET "$LITELLM_URL/key/list" \
+            -X GET "$LITELLM_URL/key/list?return_full_object=true&include_team_keys=true" \
             -H "Authorization: Bearer $MASTER_KEY" 2>&1)
 
         if [[ $? -ne 0 || -z "$RESPONSE" ]]; then
@@ -137,6 +139,84 @@ else:
     keys = data
 
 for k in keys:
+    if not isinstance(k, dict):
+        continue
+    alias = k.get('key_alias') or k.get('key_name') or ''
+    if alias == name:
+        print(k.get('token', k.get('key', '')))
+        sys.exit(0)
+
+sys.exit(1)
+" 2>&1)
+
+        if [[ $? -ne 0 || -z "$KEY_TOKEN" ]]; then
+            echo "Error: No key found with name '$NAME'."
+            exit 1
+        fi
+
+        REGEN=$(curl -sf --max-time 10 \
+            -X POST "$LITELLM_URL/key/$KEY_TOKEN/regenerate" \
+            -H "Authorization: Bearer $MASTER_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}' 2>&1)
+
+        if [[ $? -ne 0 || -z "$REGEN" ]]; then
+            echo "Error: Failed to regenerate key. Response: ${REGEN:-<empty>}"
+            exit 1
+        fi
+
+        NEW_KEY=$(echo "$REGEN" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+key = data.get('key') if isinstance(data, dict) else None
+if not key:
+    print('ERROR:' + json.dumps(data), file=sys.stderr)
+    sys.exit(1)
+print(key)
+" 2>&1)
+
+        if [[ $? -ne 0 ]]; then
+            echo "Error: Failed to parse regenerate response. $NEW_KEY"
+            exit 1
+        fi
+
+        echo "Rotated key for $NAME: $NEW_KEY"
+        echo "(Old token is now revoked. Save this — it can't be retrieved again.)"
+        ;;
+
+    delete)
+        NAME="${1:-}"
+        if [[ -z "$NAME" ]]; then
+            echo "Usage: ./hub delete-key <name>"
+            exit 1
+        fi
+
+        check_litellm
+
+        # First, find the key token by alias
+        RESPONSE=$(curl -sf --max-time 10 \
+            -X GET "$LITELLM_URL/key/list?return_full_object=true&include_team_keys=true" \
+            -H "Authorization: Bearer $MASTER_KEY" 2>&1)
+
+        if [[ $? -ne 0 || -z "$RESPONSE" ]]; then
+            echo "Error: Failed to list keys. Response: ${RESPONSE:-<empty>}"
+            exit 1
+        fi
+
+        KEY_TOKEN=$(echo "$RESPONSE" | python3 -c "
+import sys, json
+
+name = '$NAME'
+data = json.load(sys.stdin)
+
+if isinstance(data, dict):
+    keys = data.get('keys', [])
+else:
+    keys = data
+
+for k in keys:
+    if not isinstance(k, dict):
+        continue
     alias = k.get('key_alias') or k.get('key_name') or ''
     if alias == name:
         print(k.get('token', k.get('key', '')))
@@ -172,7 +252,7 @@ sys.exit(1)
         check_litellm
 
         RESPONSE=$(curl -sf --max-time 10 \
-            -X GET "$LITELLM_URL/key/list" \
+            -X GET "$LITELLM_URL/key/list?return_full_object=true&include_team_keys=true" \
             -H "Authorization: Bearer $MASTER_KEY" 2>&1)
 
         if [[ $? -ne 0 || -z "$RESPONSE" ]]; then
@@ -193,6 +273,8 @@ else:
 
 virtual_keys = []
 for k in keys:
+    if not isinstance(k, dict):
+        continue
     alias = k.get('key_alias') or k.get('key_name') or ''
     spend = k.get('spend', 0.0)
     if alias:
@@ -232,6 +314,7 @@ Usage: ./hub <command> [args]
 Key management commands:
   add-key <name>       Create a new API key
   list-keys            List all API keys
+  show-key <name>      Rotate the named key and print the new token
   delete-key <name>    Delete an API key by name
   usage [name]         Show spend for all keys or a specific key
 EOF

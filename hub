@@ -24,6 +24,7 @@ Commands:
   set-model <slot> <model>  Change a model (slot: small|large, or "large --clear")
   add-key <name>            Create an API key for a user
   list-keys                 List all API keys and usage
+  show-key <name>           Rotate and print a user's API key (token is shown once)
   delete-key <name>         Delete a user's API key
   usage [name]              Show usage summary (or per-user detail)
   metrics                   Show throughput, latency, and tokens/sec
@@ -45,6 +46,7 @@ case "$cmd" in
     set-model)  source "$HUB_DIR/scripts/set-model.sh" "$@" ;;
     add-key)    source "$HUB_DIR/scripts/keys.sh" add "$@" ;;
     list-keys)  source "$HUB_DIR/scripts/keys.sh" list "$@" ;;
+    show-key)   source "$HUB_DIR/scripts/keys.sh" show "$@" ;;
     delete-key) source "$HUB_DIR/scripts/keys.sh" delete "$@" ;;
     usage)      source "$HUB_DIR/scripts/keys.sh" usage "$@" ;;
     metrics)    source "$HUB_DIR/scripts/metrics.sh" ;;
