@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Called by hub add-key / list-keys / delete-key / usage
 # Manages virtual API keys via the LiteLLM admin API.
+#
+# hub sources this script under 'set -euo pipefail'. It handles errors manually
+# by checking $? after each curl/python call, so errexit must be off here —
+# otherwise a failing 'X=$(...)' assignment aborts before the check can run.
+set +e
 
 ACTION="${1:-}"
 shift || true
