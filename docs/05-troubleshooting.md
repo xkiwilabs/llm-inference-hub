@@ -91,6 +91,30 @@ The model name in the LiteLLM config doesn't match what vLLM loaded. This happen
 
 You need to pass an API key with every request. Use the `Authorization: Bearer` header with the API key you received from `./hub add-key`.
 
+## Asked for `large` but a smaller model answered
+
+This is expected behaviour, not a bug. When `large` is unavailable, LiteLLM falls back to `small` so the request succeeds instead of hanging or returning `429`.
+
+Confirm it by checking the response headers — `x-litellm-attempted-fallbacks: 1` means a fallback happened, and `x-litellm-model-group` names the model that actually answered. See [Client Connection](02-client-connection.md#automatic-fallback-from-large-to-small).
+
+To find out why `large` was unavailable:
+
+```bash
+./hub logs vllm-large
+```
+
+Look for the model still loading (normal for a few minutes after start), or `Running: 0 reqs, Waiting: N reqs` with near-zero throughput, which means the scheduler has stalled and the service needs a restart:
+
+```bash
+docker restart llm-inference-hub-vllm-large-1
+```
+
+## Requests hang for a long time before failing
+
+Requests time out after `request_timeout` (600s, set in `litellm/config.template.yaml`), retried once — so a fully wedged backend can take up to ~20 minutes to return an error.
+
+If that is too long for your use, lower `request_timeout` in `litellm/config.template.yaml` and run `./hub restart`. Set it above the time your longest legitimate generation needs, or you will kill valid requests.
+
 ## Can't connect from another machine
 
 1. Check the server is running: `./hub status` on the server
