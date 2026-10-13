@@ -50,6 +50,7 @@ Everything goes through the `hub` CLI at the repo root:
 - `litellm/config.template.yaml` — model routing template. Uses `os.environ/VAR` syntax and `${VAR}` for envsubst.
 - `litellm/config.yaml` — generated from template by `scripts/start.sh` (gitignored).
 - `docker-compose.yml` — service definitions. Identical across all machines.
+- `vllm/Dockerfile` — `vllm-small` image: stock `vllm/vllm-openai:${VLLM_IMAGE_TAG}` plus the `vllm[audio]` extras (upstream omits them, so audio input 400s without it). Built locally (`pull_policy: build`). `vllm-large` uses the stock image.
 
 **Key `.env` variables:** `SMALL_MODEL`, `LARGE_MODEL` (blank to skip), `TENSOR_PARALLEL_SIZE`, `SMALL_MODEL_GPU`, `LARGE_MODEL_GPUS`, `SMALL_GPU_MEM_UTIL`, `LARGE_GPU_MEM_UTIL`, `MAX_MODEL_LEN`, `TOOL_CALL_PARSER`, `LITELLM_MASTER_KEY`, `POSTGRES_PASSWORD`.
 

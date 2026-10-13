@@ -52,7 +52,7 @@ python examples/audio.py --file clip.wav
 python examples/audio.py --file speech.mp3 --prompt "Translate this to French."
 ```
 
-Audio requires a Gemma 4 **E2B** or **E4B** model. The default `small` model (Gemma 4 E4B) supports audio out of the box. The `large` model (26B MoE) is text + image only and will return a 400 on audio input.
+Audio requires a Gemma 4 **E2B** or **E4B** model. The default `small` model (Gemma 4 E4B) supports audio out of the box. The `large` model (26B MoE) is text + image only and will return a 400 on audio input. If `small` itself returns "Invalid or unsupported audio file", see [Troubleshooting](05-troubleshooting.md#400-error-when-sending-audio).
 
 ### In your own code
 

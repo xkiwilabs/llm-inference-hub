@@ -65,8 +65,12 @@ def main() -> None:
         response = client.chat.completions.create(model=args.model, messages=messages)
     except BadRequestError as err:
         print(f"Server rejected the request (400): {err.message}")
-        print("Audio requires Gemma 4 E2B or E4B. The 'large' model (26B MoE) is text+image only —")
-        print("retry with --model small, which routes to Gemma 4 E4B by default.")
+        if "invalid or unsupported audio file" in err.message.lower():
+            print("The server can't decode audio — its vLLM image is missing the audio extras.")
+            print("Ask the hub admin to rebuild vllm-small (see docs/05-troubleshooting.md).")
+        else:
+            print("Audio requires Gemma 4 E2B or E4B. The 'large' model (26B MoE) is text+image only —")
+            print("retry with --model small, which routes to Gemma 4 E4B by default.")
         sys.exit(1)
 
     print(response.choices[0].message.content)

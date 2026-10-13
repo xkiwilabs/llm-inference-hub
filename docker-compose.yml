@@ -1,6 +1,13 @@
 services:
   vllm-small:
-    image: vllm/vllm-openai:${VLLM_IMAGE_TAG:-cu130-nightly}
+    # Stock image plus the vllm[audio] extras (Gemma 4 E2B/E4B accept audio).
+    image: llm-inference-hub/vllm-audio:${VLLM_IMAGE_TAG:-cu130-nightly}
+    build:
+      context: ./vllm
+      args:
+        VLLM_IMAGE_TAG: ${VLLM_IMAGE_TAG:-cu130-nightly}
+    # Built locally, never pulled. Rebuilds on every `up` (cached, ~1s when unchanged).
+    pull_policy: build
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=${SMALL_MODEL_GPU:-0}

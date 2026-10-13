@@ -65,6 +65,8 @@ Downloads the models to `~/.cache/huggingface`. This way containers start fast i
 
 Starts the vLLM inference engine(s) and the LiteLLM gateway. Model loading takes 1-2 minutes.
 
+On the first start, `vllm-small` is built locally from `vllm/Dockerfile`: the stock vLLM image plus the audio decoding libraries it ships without (needed for audio input on Gemma 4 E2B/E4B). That adds a minute or so to the first start. Later starts reuse the cached build.
+
 ### 6. Verify
 
 ```bash

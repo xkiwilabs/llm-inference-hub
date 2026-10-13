@@ -52,11 +52,18 @@ vLLM couldn't fit the KV cache after loading weights. Either bump the correspond
 
 ## 400 error when sending audio
 
-```
-Server rejected the request (400): ... audio not supported ...
+There are two different causes, so read the error message.
+
+**"Invalid or unsupported audio file"** — the server can't decode audio at all, whatever the format. The upstream `vllm/vllm-openai` image ships without vLLM's audio extras, so `vllm-small` is built from `vllm/Dockerfile`, which adds them. If you see this error, the container is probably still running the stock image (for example, it was started from an older checkout). Rebuild and recreate it:
+
+```bash
+docker compose build --pull vllm-small
+docker compose up -d --force-recreate vllm-small
 ```
 
-Audio input only works on Gemma 4 **E2B** or **E4B**. The default `small` model is E4B (audio-capable); the default `large` model is 26B MoE and is text + image only. Retry with `--model small`, or swap your small model to an E-variant. See [Managing Models](04-managing-models.md).
+`./hub logs vllm-small` will show `Please install vllm[audio] for audio support` if this is the cause.
+
+**Model doesn't support audio** — audio input only works on Gemma 4 **E2B** or **E4B**. The default `small` model is E4B (audio-capable); the default `large` model is 26B MoE and is text + image only. Retry with `--model small`, or swap your small model to an E-variant. See [Managing Models](04-managing-models.md).
 
 ## "NVIDIA runtime not found"
 
