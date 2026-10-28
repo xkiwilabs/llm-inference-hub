@@ -5,6 +5,10 @@
 ACTION="${1:-}"
 shift || true
 
+# Every call below checks its own exit status and prints an error. Under hub's set -e,
+# a failing VAR=$(...) would exit silently before that check runs.
+set +e
+
 LITELLM_URL="http://localhost:${LITELLM_PORT:-4200}"
 MASTER_KEY="${LITELLM_MASTER_KEY:-}"
 
