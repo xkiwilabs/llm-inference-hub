@@ -96,7 +96,7 @@ services:
       - ./litellm/config.yaml:/app/config.yaml
     command: --config /app/config.yaml --port 4000 --host 0.0.0.0
     ports:
-      - "${LITELLM_PORT:-4000}:4000"
+      - "${LITELLM_PORT:-4200}:4000"
     depends_on:
       vllm-small:
         condition: service_healthy

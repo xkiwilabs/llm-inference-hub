@@ -43,7 +43,7 @@ Everything goes through the `hub` CLI at the repo root:
 - `vllm-small` — always runs, single GPU, port 8001 (localhost only)
 - `vllm-large` — conditional via `deploy.replicas` (0 or 1), port 8002 (localhost only)
 - `postgres` — stores API keys and usage data, port 5432 (localhost only)
-- `litellm` — gateway, port 4000 (exposed to network), depends on vllm-small and postgres healthy
+- `litellm` — gateway, host port `${LITELLM_PORT}` (4200, exposed to network; 4000 inside the container), depends on vllm-small and postgres healthy
 
 **Configuration files:**
 - `.env` — all hardware-specific and secret values (gitignored). Drives everything.
