@@ -66,7 +66,7 @@ To download models without starting them (useful for slow connections):
 ./hub pull-models
 ```
 
-This downloads whatever is in `SMALL_MODEL` and `LARGE_MODEL` in `.env` to `~/.cache/huggingface`.
+This downloads whatever is in `SMALL_MODEL` and `LARGE_MODEL` in `.env` to `~/.cache/huggingface`, plus the DecisiveLM bundle and its backbone if `DECISIVELM_BUNDLE_REPO` is set (see [DecisiveLM](06-decisivelm.md)).
 
 ## Using non-Gemma models
 
@@ -98,3 +98,7 @@ MAX_MODEL_LEN=32768       # per-request context window
 ```
 
 Lower these if you need to share the GPU with other workloads (e.g. computer-vision training). Raise `MAX_MODEL_LEN` only after verifying the KV cache still fits.
+
+## Optional: DecisiveLM
+
+DecisiveLM (calibrated answers to typed questions, built on Gemma 4 E4B) runs as its own server beside the hub, and the hub routes `/decisivelm/v1/...` to it. Its bundle and pinned backbone download with `./hub pull-models` when `DECISIVELM_BUNDLE_REPO` is set. See [DecisiveLM](06-decisivelm.md) for setup, GPU headroom and the API.

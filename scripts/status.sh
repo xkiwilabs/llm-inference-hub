@@ -50,6 +50,11 @@ if [[ -n "${LARGE_MODEL:-}" ]]; then
     check_endpoint "vllm-large" "http://localhost:8002/health"
 fi
 
+# DecisiveLM — only checked when its route is configured (a separate server, not part of this compose file)
+if [[ -n "${DECISIVELM_URL:-}" ]]; then
+    check_endpoint "decisivelm" "${DECISIVELM_HEALTH_URL:-http://localhost:8003/health}"
+fi
+
 # LiteLLM gateway — requires API key for health check
 if curl -sf --max-time 5 -H "Authorization: Bearer ${LITELLM_MASTER_KEY:-}" \
     "http://localhost:${LITELLM_PORT:-4200}/health" > /dev/null 2>&1; then

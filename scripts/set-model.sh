@@ -46,7 +46,8 @@ case "$SLOT" in
         $HF_CMD download "$MODEL"
 
         # Regenerate litellm config and restart services
-        envsubst < "$HUB_DIR/litellm/config.template.yaml" > "$HUB_DIR/litellm/config.yaml"
+        source "$HUB_DIR/scripts/render-config.sh"
+        render_litellm_config
         docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-small litellm
         echo "Done. vllm-small restarting with $MODEL"
         ;;
@@ -77,7 +78,8 @@ case "$SLOT" in
 
             # Regenerate litellm config and restart services
             export LARGE_MODEL_REPLICAS=1
-            envsubst < "$HUB_DIR/litellm/config.template.yaml" > "$HUB_DIR/litellm/config.yaml"
+            source "$HUB_DIR/scripts/render-config.sh"
+            render_litellm_config
             docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d --force-recreate vllm-large litellm
             echo "Done. vllm-large restarting with $MODEL"
         fi

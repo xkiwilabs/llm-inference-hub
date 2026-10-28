@@ -54,6 +54,16 @@ python examples/audio.py --file speech.mp3 --prompt "Translate this to French."
 
 Audio requires a Gemma 4 **E2B** or **E4B** model. The default `small` model (Gemma 4 E4B) supports audio out of the box. The `large` model (26B MoE) is text + image only and will return a 400 on audio input. If `small` itself returns "Invalid or unsupported audio file", see [Troubleshooting](05-troubleshooting.md#400-error-when-sending-audio).
 
+### DecisiveLM (calibrated question answering)
+
+```bash
+python examples/decisivelm.py --text "My card was declined twice today."
+python examples/decisivelm.py --image path/to/photo.jpg
+python examples/decisivelm.py --list-bundles
+```
+
+Only if your hub has [DecisiveLM](06-decisivelm.md) connected. Asks a few example questions (a probability, a multiple choice and a score) and prints the calibrated answers. Uses only the standard library; same `INFERENCE_HUB_URL` / `INFERENCE_HUB_KEY` as the other examples.
+
 ### In your own code
 
 ```python
@@ -107,6 +117,20 @@ curl http://SERVER_IP:4200/v1/chat/completions \
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
+
+### DecisiveLM
+
+```bash
+curl http://SERVER_IP:4200/decisivelm/v1/systemone \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "state": "My card was declined twice today.",
+    "questions": {"angry": {"type": "noul", "instructions": "The customer is angry"}}
+  }'
+```
+
+Returns `{"answers": {"angry": {"type": "noul", "noul": 0.53}}, ...}` — the probability the statement is true. See [DecisiveLM](06-decisivelm.md) for the request format.
 
 ## JavaScript / TypeScript
 

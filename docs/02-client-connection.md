@@ -64,6 +64,18 @@ curl -i http://SERVER_IP:4200/v1/chat/completions \
 
 For everyday chat and coding use, the fallback is what you want: a fast answer from the smaller model beats waiting on an unavailable one.
 
+## DecisiveLM (if your hub has it)
+
+Some hubs also serve [DecisiveLM](06-decisivelm.md), which returns calibrated probabilities for typed questions rather than chat replies. It is not an OpenAI endpoint, so it doesn't appear in `/v1/models` and the OpenAI SDK can't call it. Use plain HTTP with the same key:
+
+| Setting | Value |
+|---|---|
+| Endpoint | `POST http://<server-ip>:4200/decisivelm/v1/systemone` |
+| Bundles | `GET http://<server-ip>:4200/decisivelm/v1/models` |
+| Headers | `Authorization: Bearer <your key>` and `Content-Type: application/json` |
+
+There is no fallback on this route: if the DecisiveLM server is down you get an error, never a different model's answer.
+
 ## Compatibility
 
 Inference-hub speaks the OpenAI API. Any tool with a "custom OpenAI endpoint" or "OpenAI-compatible" option works. This includes:

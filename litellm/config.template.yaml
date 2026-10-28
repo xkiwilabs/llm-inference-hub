@@ -16,6 +16,7 @@ general_settings:
   database_url: os.environ/DATABASE_URL
   # Default is 6000s — a wedged backend hangs the client for 100 minutes.
   request_timeout: 600
+${DECISIVELM_PASSTHROUGH}
 
 litellm_settings:
   drop_params: true

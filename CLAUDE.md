@@ -48,11 +48,13 @@ Everything goes through the `hub` CLI at the repo root:
 **Configuration files:**
 - `.env` — all hardware-specific and secret values (gitignored). Drives everything.
 - `litellm/config.template.yaml` — model routing template. Uses `os.environ/VAR` syntax and `${VAR}` for envsubst.
-- `litellm/config.yaml` — generated from template by `scripts/start.sh` (gitignored).
+- `litellm/config.yaml` — generated from template by `scripts/render-config.sh` (gitignored).
 - `docker-compose.yml` — service definitions. Identical across all machines.
 - `vllm/Dockerfile` — `vllm-small` image: stock `vllm/vllm-openai:${VLLM_IMAGE_TAG}` plus the `vllm[audio]` extras (upstream omits them, so audio input 400s without it). Built locally (`pull_policy: build`). `vllm-large` uses the stock image.
 
-**Key `.env` variables:** `SMALL_MODEL`, `LARGE_MODEL` (blank to skip), `TENSOR_PARALLEL_SIZE`, `SMALL_MODEL_GPU`, `LARGE_MODEL_GPUS`, `SMALL_GPU_MEM_UTIL`, `LARGE_GPU_MEM_UTIL`, `MAX_MODEL_LEN`, `TOOL_CALL_PARSER`, `LITELLM_MASTER_KEY`, `POSTGRES_PASSWORD`.
+**Key `.env` variables:** `SMALL_MODEL`, `LARGE_MODEL` (blank to skip), `TENSOR_PARALLEL_SIZE`, `SMALL_MODEL_GPU`, `LARGE_MODEL_GPUS`, `SMALL_GPU_MEM_UTIL`, `LARGE_GPU_MEM_UTIL`, `MAX_MODEL_LEN`, `TOOL_CALL_PARSER`, `LITELLM_MASTER_KEY`, `POSTGRES_PASSWORD`, optional `DECISIVELM_URL` / `DECISIVELM_HEALTH_URL` (blank = no DecisiveLM route) and `DECISIVELM_BUNDLE_REPO` (blank = pull-models skips the bundle); see docs/06-decisivelm.md.
+
+**DecisiveLM (optional)** is a separate server the hub only routes to (`/decisivelm/v1/...` pass-through, auth checked by the DecisiveLM server since LiteLLM pass-through auth is Enterprise-only). The hub never starts it. Keep all DecisiveLM changes off the public `origin` until DecisiveLM's first release.
 
 **The large model service** uses `deploy.replicas: ${LARGE_MODEL_REPLICAS:-0}`. The `hub` script auto-sets this to 1 when `LARGE_MODEL` is non-empty.
 
@@ -72,8 +74,9 @@ Everything goes through the `hub` CLI at the repo root:
 `hub` sources scripts from `scripts/`:
 - `scripts/setup.sh` — idempotent prerequisite installer (NVIDIA drivers, Docker, nvidia-ctk, HuggingFace CLI)
 - `scripts/start.sh` — sets replicas, generates config from template, runs compose up
+- `scripts/render-config.sh` — `render_litellm_config()`, the only path that renders `litellm/config.yaml` (used by start.sh and set-model.sh); adds the optional DecisiveLM pass-through when `DECISIVELM_URL` is set
 - `scripts/status.sh` — container state, nvidia-smi, endpoint health checks
-- `scripts/pull-models.sh` — downloads models via HuggingFace CLI (`hf`)
+- `scripts/pull-models.sh` — downloads models via HuggingFace CLI (`hf`), plus the DecisiveLM bundle and its pinned backbone when `DECISIVELM_BUNDLE_REPO` is set
 - `scripts/set-model.sh` — updates .env, pulls model, restarts service
 - `scripts/keys.sh` — manages API keys via LiteLLM admin API (add, list, delete, usage)
 - `scripts/metrics.sh` — fetches Prometheus metrics from vLLM endpoints

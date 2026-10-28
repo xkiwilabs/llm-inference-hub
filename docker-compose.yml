@@ -97,6 +97,9 @@ services:
     command: --config /app/config.yaml --port 4000 --host 0.0.0.0
     ports:
       - "${LITELLM_PORT:-4200}:4000"
+    # Lets LiteLLM reach optional servers run on the host itself (e.g. DecisiveLM via DECISIVELM_URL).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       vllm-small:
         condition: service_healthy

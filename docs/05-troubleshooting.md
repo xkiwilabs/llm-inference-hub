@@ -136,3 +136,14 @@ If `./hub add-key` or `./hub list-keys` fails:
 1. Check postgres is running: `./hub status`
 2. Check logs: `./hub logs postgres`
 3. Reset the database (destroys all keys): `docker volume rm llm-inference-hub_pgdata && ./hub restart`
+
+## DecisiveLM: "not responding", 404, 401 or 422
+
+DecisiveLM is a separate server that the hub only routes to — it does not start with `./hub start`.
+
+- **`./hub status` shows `decisivelm: not responding`, or `/decisivelm/...` returns 5xx:** start the DecisiveLM server, then check `curl http://localhost:8003/health`. It must also listen on the Docker bridge address (`DECISIVELM_HOST=127.0.0.1,172.17.0.1`) so the LiteLLM container can reach it.
+- **404 on `/decisivelm/...`:** `DECISIVELM_URL` isn't set, or the gateway hasn't been restarted since you set it.
+- **401:** missing or invalid hub key. A key you just created works immediately; a deleted one can keep working for up to 5 minutes.
+- **422:** add `-H "Content-Type: application/json"`.
+
+The full list is in [DecisiveLM → Troubleshooting](06-decisivelm.md#troubleshooting).

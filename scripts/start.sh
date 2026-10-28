@@ -20,7 +20,8 @@ else
 fi
 
 # Generate litellm config from template
-envsubst < "$HUB_DIR/litellm/config.template.yaml" > "$HUB_DIR/litellm/config.yaml"
+source "$HUB_DIR/scripts/render-config.sh"
+render_litellm_config
 
 echo "Starting inference hub..."
 echo "  Small model: ${SMALL_MODEL:-<not set>}"
@@ -28,6 +29,9 @@ if [[ "${LARGE_MODEL_REPLICAS}" == "1" ]]; then
     echo "  Large model: ${LARGE_MODEL}"
 else
     echo "  Large model: (none)"
+fi
+if [[ -n "${DECISIVELM_URL:-}" ]]; then
+    echo "  DecisiveLM: /decisivelm/v1/systemone -> ${DECISIVELM_URL}"
 fi
 
 docker compose -f "$HUB_DIR/docker-compose.yml" --env-file "$HUB_DIR/.env" up -d

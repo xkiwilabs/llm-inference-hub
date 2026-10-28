@@ -14,6 +14,7 @@ Ships with **Google Gemma 4** by default: a small multimodal model (text + image
 - **OpenAI-compatible** — works with any tool that speaks the OpenAI API
 - **Anthropic-compatible** — also works with tools that speak the Anthropic Messages API
 - **One command to start** on any workstation
+- **Optional [DecisiveLM](docs/06-decisivelm.md)** — calibrated probabilities for typed questions about text, images and audio, behind the same API keys
 
 ## Quick start
 
@@ -49,6 +50,7 @@ Works with any OpenAI- or Anthropic-compatible client — Python, JavaScript, cu
 | [Examples](docs/03-examples.md) | Python scripts, curl, JavaScript, Open WebUI, Agent Frameworks |
 | [Managing Models](docs/04-managing-models.md) | Swapping models, adding/removing the large model |
 | [Troubleshooting](docs/05-troubleshooting.md) | Common issues and fixes |
+| [DecisiveLM](docs/06-decisivelm.md) | Optional: download, run and call DecisiveLM through the hub |
 
 ## Hub commands
 
@@ -79,6 +81,18 @@ Works with any OpenAI- or Anthropic-compatible client — Python, JavaScript, cu
 | `large` | `google/gemma-4-26B-A4B-it` | 26B MoE, 4B active | text + image |
 
 Both support tool calling via Gemma 4's native parser. Swap either with `./hub set-model small|large <hf-model-id>` — see [Managing Models](docs/04-managing-models.md).
+
+## Optional: DecisiveLM
+
+[DecisiveLM](https://github.com/xkiwilabs/decisive-lm) answers typed questions ("is this customer angry?", "which category is this photo?") with calibrated probabilities instead of generated text. It is Gemma 4 E4B plus a small adapter, published on HuggingFace as [`xkiwilabs/decisivelm-e4b-general`](https://huggingface.co/xkiwilabs/decisivelm-e4b-general), and runs as its own server (~16 GB GPU) beside the hub.
+
+```bash
+# in .env
+DECISIVELM_BUNDLE_REPO=xkiwilabs/decisivelm-e4b-general   # ./hub pull-models downloads it
+DECISIVELM_URL=http://host.docker.internal:8003           # route /decisivelm/v1/... to the server
+```
+
+Then call `POST http://<machine-ip>:4200/decisivelm/v1/systemone` with your usual hub API key. Full setup in [docs/06-decisivelm.md](docs/06-decisivelm.md).
 
 ## Hardware reference
 
