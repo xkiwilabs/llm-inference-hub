@@ -84,7 +84,7 @@ Both support tool calling via Gemma 4's native parser. Swap either with `./hub s
 
 ## Optional: DecisiveLM
 
-[DecisiveLM](https://github.com/xkiwilabs/decisive-lm) answers typed questions ("is this customer angry?", "which category is this photo?") with calibrated probabilities instead of generated text. It is Gemma 4 E4B plus a small adapter, published on HuggingFace as [`xkiwilabs/decisivelm-e4b-general`](https://huggingface.co/xkiwilabs/decisivelm-e4b-general), and runs as its own server (~16 GB GPU) beside the hub.
+[DecisiveLM](https://github.com/xkiwilabs/decisive-lm) answers typed questions ("is this customer angry?", "which category is this photo?") with calibrated probabilities instead of generated text. It is a Gemma 4 model plus a small adapter, published on HuggingFace in two sizes, [`xkiwilabs/decisivelm-e4b-general`](https://huggingface.co/xkiwilabs/decisivelm-e4b-general) (~16 GB GPU) and [`xkiwilabs/decisivelm-26b-a4b-general`](https://huggingface.co/xkiwilabs/decisivelm-26b-a4b-general) (~60 GB GPU), and runs as its own server beside the hub.
 
 ```bash
 # in .env

@@ -101,4 +101,4 @@ Lower these if you need to share the GPU with other workloads (e.g. computer-vis
 
 ## Optional: DecisiveLM
 
-DecisiveLM (calibrated answers to typed questions, built on Gemma 4 E4B) runs as its own server beside the hub, and the hub routes `/decisivelm/v1/...` to it. Its bundle and pinned backbone download with `./hub pull-models` when `DECISIVELM_BUNDLE_REPO` is set. See [DecisiveLM](06-decisivelm.md) for setup, GPU headroom and the API.
+DecisiveLM (calibrated answers to typed questions, built on Gemma 4 E4B or 26B-A4B) runs as its own server beside the hub, and the hub routes `/decisivelm/v1/...` to it. Its bundle and pinned backbone download with `./hub pull-models` when `DECISIVELM_BUNDLE_REPO` is set. See [DecisiveLM](06-decisivelm.md) for setup, GPU headroom and the API.

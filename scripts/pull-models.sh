@@ -31,15 +31,20 @@ pull_model "${SMALL_MODEL:-}"
 pull_model "${LARGE_MODEL:-}"
 
 # Optional DecisiveLM bundle (blank = skip). The bundle is a plain directory the DecisiveLM server loads via
-# DECISIVELM_BUNDLES; its backbone must be the exact revision it was trained against, fetched into the HF cache.
+# DECISIVELM_BUNDLES. Its calibration.json pins the exact backbone it was trained against (E4B or 26B-A4B),
+# which is fetched into the HF cache.
 if [[ -n "${DECISIVELM_BUNDLE_REPO:-}" ]]; then
     bundle_dir="${DECISIVELM_BUNDLE_DIR:-$HOME/.cache/decisivelm/bundles}/$(basename "$DECISIVELM_BUNDLE_REPO")"
-    base_model="${DECISIVELM_BASE_MODEL:-google/gemma-4-E4B-it}"
-    base_revision="${DECISIVELM_BASE_REVISION:-ee0ef6023621cff504d758262d4e04895a5af4a2}"
-    echo "Pulling DecisiveLM backbone $base_model@$base_revision..."
-    $HF_CMD download "$base_model" --revision "$base_revision"
     echo "Pulling DecisiveLM bundle $DECISIVELM_BUNDLE_REPO..."
     $HF_CMD download "$DECISIVELM_BUNDLE_REPO" --local-dir "$bundle_dir"
+
+    read -r base_model base_revision < <(python3 -c "
+import json, sys
+b = json.load(open(sys.argv[1]))['backbone']
+print(b['model_id'], b['revision'])
+" "$bundle_dir/calibration.json" 2>/dev/null) || { echo "Error: no backbone pin in $bundle_dir/calibration.json"; exit 1; }
+    echo "Pulling DecisiveLM backbone $base_model@$base_revision..."
+    $HF_CMD download "$base_model" --revision "$base_revision"
     echo "  Done: $bundle_dir (point the DecisiveLM server's DECISIVELM_BUNDLES here)"
 fi
 

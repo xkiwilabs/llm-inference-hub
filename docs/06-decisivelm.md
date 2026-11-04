@@ -2,7 +2,7 @@
 
 [DecisiveLM](https://github.com/xkiwilabs/decisive-lm) answers typed questions about a *state* — text, JSON, an image or an audio clip — with calibrated probabilities, in a single forward pass. Ask "is this customer angry?" or "which of these categories is this photo?" and get back a probability (or a probability per option), not generated text.
 
-It is built on Gemma 4 E4B (the hub's default `small` model) plus a small adapter. It is **not** a chat model and cannot run inside vLLM, so it runs as its own server on the same machine and the hub only routes to it. Users call it through the hub with their usual hub API key:
+It is a Gemma 4 model plus a small adapter, in two sizes (see [Choosing a model](#choosing-a-model)). It is **not** a chat model and cannot run inside vLLM, so it runs as its own server on the same machine and the hub only routes to it. Users call it through the hub with their usual hub API key:
 
 ```
 POST http://<machine-ip>:4200/decisivelm/v1/systemone
@@ -11,17 +11,30 @@ GET  http://<machine-ip>:4200/decisivelm/v1/models
 
 Nothing here is needed to run the rest of the hub. With `DECISIVELM_URL` blank (the default) there is no route and nothing changes.
 
+## Choosing a model
+
+Both models take the same requests and give the same kinds of answers; the server, install and API are identical. Pick one per hub.
+
+| | E4B | 26B-A4B |
+|---|---|---|
+| HuggingFace | [`xkiwilabs/decisivelm-e4b-general`](https://huggingface.co/xkiwilabs/decisivelm-e4b-general) | [`xkiwilabs/decisivelm-26b-a4b-general`](https://huggingface.co/xkiwilabs/decisivelm-26b-a4b-general) |
+| Backbone | Gemma 4 E4B (~15 GB download) | Gemma 4 26B-A4B (~49 GB download) |
+| GPU memory | ~16–18 GB; `DECISIVELM_MEMORY_GB=20` | ~55–60 GB (provisional); `DECISIVELM_MEMORY_GB=64` |
+| Where it fits | Beside `vllm-small` on a 96 GB card, or alone on a 24 GB card | Needs a GPU with ~64 GB free — in practice its own GPU |
+| Typical latency | ~0.1 s | ~0.45 s |
+| Inputs | Text, JSON, images; audio accepted but untested | Text, JSON, images; **no audio** |
+
+Both bundles are Apache-2.0 and public, so no token is needed to download them. Start with E4B unless you have a spare large GPU and want the bigger backbone. The model cards on HuggingFace describe each one's strengths and weak spots.
+
 ## Requirements
 
-- **GPU memory:** about 16 GB on one GPU, up to the `DECISIVELM_MEMORY_GB` cap (20 GB recommended; images and long requests use more), on top of what vLLM uses. On a two-GPU workstation it fits beside `vllm-small` on GPU 0; on a single 24 GB card it will not fit beside the small model with vLLM's usual memory setting.
-- **Disk:** the pinned Gemma 4 E4B backbone (~15 GB, in the HuggingFace cache) plus the bundle (~80 MB).
+- **GPU memory:** see the table above, on top of what vLLM uses. The `DECISIVELM_MEMORY_GB` cap stops DecisiveLM from ever squeezing vLLM.
+- **Disk:** the pinned backbone (in the HuggingFace cache) plus the bundle (under 100 MB).
 - **Software:** [uv](https://docs.astral.sh/uv/) to install the DecisiveLM server.
 
 ## 1. Download the model
 
-DecisiveLM is published on HuggingFace as [`xkiwilabs/decisivelm-e4b-general`](https://huggingface.co/xkiwilabs/decisivelm-e4b-general) (Apache-2.0). The repo is public, so no token is needed to download it.
-
-The easiest way is to let the hub fetch it. Add to `.env`:
+The easiest way is to let the hub fetch it. Add to `.env` (or the 26B repo instead):
 
 ```
 DECISIVELM_BUNDLE_REPO=xkiwilabs/decisivelm-e4b-general
@@ -36,15 +49,20 @@ then run:
 This downloads, alongside the small and large models:
 
 - the bundle (adapter + scorer head + calibration) into `~/.cache/decisivelm/bundles/decisivelm-e4b-general` (change the parent dir with `DECISIVELM_BUNDLE_DIR`). The directory name is the bundle's name — what callers put in `model`;
-- the exact Gemma 4 E4B revision the bundle was trained against, into the HuggingFace cache. The bundle only works with that revision and the server checks it. If your `small` model is a different revision of E4B, this is an extra ~15 GB.
+- the exact backbone revision the bundle was trained against, read from the bundle's `calibration.json`, into the HuggingFace cache. The bundle only works with that revision and the server checks it. If your `small` or `large` model is a different revision of the same Gemma model, this is an extra download.
 
 The server reads the default HuggingFace cache. If you set `HF_HOME` or `HF_HUB_CACHE` for the hub, give the DecisiveLM server the same setting.
 
 To download by hand instead:
 
 ```bash
-hf download google/gemma-4-E4B-it --revision ee0ef6023621cff504d758262d4e04895a5af4a2
+# E4B
 hf download xkiwilabs/decisivelm-e4b-general --local-dir ~/.cache/decisivelm/bundles/decisivelm-e4b-general
+hf download google/gemma-4-E4B-it --revision ee0ef6023621cff504d758262d4e04895a5af4a2
+
+# 26B-A4B
+hf download xkiwilabs/decisivelm-26b-a4b-general --local-dir ~/.cache/decisivelm/bundles/decisivelm-26b-a4b-general
+hf download google/gemma-4-26B-A4B-it --revision 4d7ae4984b7db7de8f8457170b3f1a419ee76d52
 ```
 
 ## 2. Install and run the DecisiveLM server
@@ -62,11 +80,14 @@ DECISIVELM_LITELLM_URL=http://127.0.0.1:4200 \
 uv run python -m decisivelm.serve
 ```
 
+For 26B-A4B, point `DECISIVELM_BUNDLES` at `~/.cache/decisivelm/bundles/decisivelm-26b-a4b-general`, set `DECISIVELM_MEMORY_GB=64`, and pick a GPU with that much free in `DECISIVELM_DEVICE` (on a two-GPU hub, not the one `vllm-large` is using). The audio extra does nothing for it. One server holds bundles of one backbone only.
+
 What those settings do:
 
 | Variable | Meaning |
 |---|---|
 | `DECISIVELM_BUNDLES` | Bundle dir, a dir of bundle dirs, or several of either comma-joined. Each bundle's name is its directory name. |
+| `DECISIVELM_DEFAULT` | Optional; the bundle used when a request has no `model`. |
 | `DECISIVELM_HOST` | Addresses to listen on. `127.0.0.1` for local callers; `172.17.0.1` (the Docker bridge, check with `ip -4 addr show docker0`) so the LiteLLM container can reach it. **Never `0.0.0.0`.** |
 | `DECISIVELM_PORT` | Default `8003`. |
 | `DECISIVELM_DEVICE` | Optional; `cuda:N` picks a GPU. Default `cuda`, else `mps`, else `cpu`. |
@@ -170,7 +191,7 @@ print(answer["answers"]["angry"]["noul"])   # probability the statement is true
 |---|---|---|
 | `state` | yes | A string, or a JSON object (arrays must be wrapped in an object). |
 | `questions` | yes | An object `{id: question}`. The model never sees the ids, so `instructions` must carry the whole question. |
-| `media` | no | Up to 4 images and 4 audio clips: `[{"type": "image" \| "audio", "data": "<base64>"}]`. Plain base64 of the file bytes (a `data:` URL prefix is also accepted) — not a path or URL. PNG/JPEG images; WAV/FLAC/OGG/MP3 audio (cut at 30 s; the server needs the `audio` extra). |
+| `media` | no | Up to 4 images and 4 audio clips: `[{"type": "image" \| "audio", "data": "<base64>"}]`. Plain base64 of the file bytes (a `data:` URL prefix is also accepted) — not a path or URL. PNG/JPEG images; WAV/FLAC/OGG/MP3 audio (E4B only, cut at 30 s; the server needs the `audio` extra). |
 | `model` | no | Which bundle answers (see `GET /decisivelm/v1/models`); defaults to the server's default bundle. |
 
 Question types:
@@ -201,7 +222,9 @@ The full reference is in DecisiveLM's guide, [Requests and responses](https://gi
 }
 ```
 
-The general bundle is trained on text only. It works on images zero-shot, but calibrate its confidence on ~100 labelled images of your task before you rely on review thresholds.
+Both general bundles were trained on one photo task (VizWiz-VQA: whether a blind user's photo can answer their question). Other kinds of image are zero-shot, so calibrate their probabilities on ~100 labelled images of your task before you rely on review thresholds.
+
+Audio works only with E4B (the server needs `--extra audio`), and the general bundle was not trained on audio and has not been evaluated on it. Treat audio answers as untested. The 26B-A4B backbone has no audio input at all; audio sent to it is rejected with a 400.
 
 ## How auth works
 
@@ -220,7 +243,7 @@ LiteLLM can only check hub keys on routes like this one with an Enterprise licen
 | 404 from `/decisivelm/...` | `DECISIVELM_URL` isn't set, or the gateway wasn't restarted after setting it. |
 | 401 | Missing or invalid hub key. |
 | 422 | Missing `Content-Type: application/json` header. |
-| 400 | Invalid body — an unknown field, a top-level array as `state`, media that isn't base64 or isn't a readable image/sound file, or audio sent to a server without the `audio` extra. The `error.message` says which. |
+| 400 | Invalid body — an unknown field, a top-level array as `state`, media that isn't base64 or isn't a readable image/sound file, or audio sent to a server without the `audio` extra or to a 26B-A4B server. The `error.message` says which. |
 | 404 with an `error` body naming a bundle | The `model` you asked for isn't loaded on the server. |
 | 413 | The request is longer than `DECISIVELM_MAX_TOKENS` (default 12,288: a state is cut at 8,192 tokens, which leaves about 4,000 for questions and options). Send fewer or shorter questions, or raise the limit on the server (more GPU memory). |
 | 503 | The GPU ran out of memory, or the server couldn't reach the hub to check the key. |

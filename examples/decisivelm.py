@@ -113,7 +113,7 @@ def main() -> None:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--text", help="A text state to ask about.")
     group.add_argument("--image", help="Path to a PNG or JPEG image.")
-    group.add_argument("--audio", help="Path to a WAV/FLAC/OGG/MP3 clip (cut at 30 s).")
+    group.add_argument("--audio", help="Path to a WAV/FLAC/OGG/MP3 clip (cut at 30 s). The general bundle is untested on audio.")
     group.add_argument("--list-bundles", action="store_true", help="List the bundles the server has loaded.")
     parser.add_argument("--bundle", help="Bundle to use (default: the server's default bundle).")
     args = parser.parse_args()
