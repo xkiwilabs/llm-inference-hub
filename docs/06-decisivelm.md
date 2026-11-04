@@ -21,8 +21,10 @@ Both models take the same requests and give the same kinds of answers; the serve
 | Backbone | Gemma 4 E4B (~15 GB download) | Gemma 4 26B-A4B (~49 GB download) |
 | GPU memory | ~16–18 GB; `DECISIVELM_MEMORY_GB=20` | ~55–60 GB (provisional); `DECISIVELM_MEMORY_GB=64` |
 | Where it fits | Beside `vllm-small` on a 96 GB card, or alone on a 24 GB card | Needs a GPU with ~64 GB free — in practice its own GPU |
-| Typical latency | ~0.1 s | ~0.45 s |
+| Typical latency¹ | ~0.1 s | ~0.45 s |
 | Inputs | Text, JSON, images; audio accepted but untested | Text, JSON, images; **no audio** |
+
+¹ One ~1,200-token request with 20 options on one RTX PRO 6000, excluding HTTP.
 
 Both bundles are Apache-2.0 and public, so no token is needed to download them. Start with E4B unless you have a spare large GPU and want the bigger backbone. The model cards on HuggingFace describe each one's strengths and weak spots.
 
@@ -222,7 +224,7 @@ The full reference is in DecisiveLM's guide, [Requests and responses](https://gi
 }
 ```
 
-Both general bundles were trained on one photo task (VizWiz-VQA: whether a blind user's photo can answer their question). Other kinds of image are zero-shot, so calibrate their probabilities on ~100 labelled images of your task before you rely on review thresholds.
+Both general bundles were trained on one photo task (VizWiz-VQA: whether a blind user's photo can answer their question, and the answer). Other kinds of image are zero-shot, so calibrate their probabilities on ~100 labelled images of your task before you rely on review thresholds.
 
 Audio works only with E4B (the server needs `--extra audio`), and the general bundle was not trained on audio and has not been evaluated on it. Treat audio answers as untested. The 26B-A4B backbone has no audio input at all; audio sent to it is rejected with a 400.
 
