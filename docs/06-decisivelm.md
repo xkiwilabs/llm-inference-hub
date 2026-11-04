@@ -19,9 +19,9 @@ Both models take the same requests and give the same kinds of answers; the serve
 |---|---|---|
 | HuggingFace | [`xkiwilabs/decisivelm-e4b-general`](https://huggingface.co/xkiwilabs/decisivelm-e4b-general) | [`xkiwilabs/decisivelm-26b-a4b-general`](https://huggingface.co/xkiwilabs/decisivelm-26b-a4b-general) |
 | Backbone | Gemma 4 E4B (~15 GB download) | Gemma 4 26B-A4B (~49 GB download) |
-| GPU memory | ~16–18 GB; `DECISIVELM_MEMORY_GB=20` | ~55–60 GB (provisional); `DECISIVELM_MEMORY_GB=64` |
-| Where it fits | Beside `vllm-small` on a 96 GB card, or alone on a 24 GB card | Needs a GPU with ~64 GB free — in practice its own GPU |
-| Typical latency¹ | ~0.1 s | ~0.45 s |
+| GPU memory | ~16–18 GB; `DECISIVELM_MEMORY_GB=20` | ~57 GB idle, ~69 GB peak on near-limit requests; `DECISIVELM_MEMORY_GB=72` |
+| Where it fits | Beside `vllm-small` on a 96 GB card, or alone on a 24 GB card | Needs a GPU with ~72 GB free — in practice its own GPU |
+| Typical latency¹ | ~0.1 s | ~0.45 s (~5.8 s for a near-limit 12,000-token request) |
 | Inputs | Text, JSON, images; audio accepted but untested | Text, JSON, images; **no audio** |
 
 ¹ One ~1,200-token request with 20 options on one RTX PRO 6000, excluding HTTP.
@@ -82,7 +82,7 @@ DECISIVELM_LITELLM_URL=http://127.0.0.1:4200 \
 uv run python -m decisivelm.serve
 ```
 
-For 26B-A4B, point `DECISIVELM_BUNDLES` at `~/.cache/decisivelm/bundles/decisivelm-26b-a4b-general`, set `DECISIVELM_MEMORY_GB=64`, and pick a GPU with that much free in `DECISIVELM_DEVICE` (on a two-GPU hub, not the one `vllm-large` is using). The audio extra does nothing for it. One server holds bundles of one backbone only.
+For 26B-A4B, point `DECISIVELM_BUNDLES` at `~/.cache/decisivelm/bundles/decisivelm-26b-a4b-general`, set `DECISIVELM_MEMORY_GB=72` (a lower cap gives 503 on long requests), and pick a GPU with that much free in `DECISIVELM_DEVICE` (on a two-GPU hub, not the one `vllm-large` is using). The audio extra does nothing for it. One server holds bundles of one backbone only.
 
 What those settings do:
 
