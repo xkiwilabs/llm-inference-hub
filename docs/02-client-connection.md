@@ -6,7 +6,7 @@ How to connect to inference-hub from any machine on your network.
 
 | Setting | OpenAI SDK | Anthropic SDK |
 |---|---|---|
-| Base URL | `http://<server-ip>:4200/v1` | `http://<server-ip>:4200/anthropic/v1` |
+| Base URL | `http://<server-ip>:4200/v1` | `http://<server-ip>:4200` (no path; the SDK adds `/v1/messages`) |
 | API Key | Your key from `./hub add-key` | Same key |
 | Model | `small` or `large` | `small` or `large` |
 

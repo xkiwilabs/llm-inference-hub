@@ -9,7 +9,7 @@ A reproducible LLM inference stack (vLLM + LiteLLM + PostgreSQL) for multi-GPU U
 ## Stack
 
 - **vLLM** — inference engine (continuous batching, tensor parallelism, MXFP4 via Marlin on Ampere)
-- **LiteLLM** — unified API gateway (routing, API key auth, usage tracking). Serves both OpenAI (`/v1`) and Anthropic (`/anthropic/v1`) endpoints.
+- **LiteLLM** — unified API gateway (routing, API key auth, usage tracking). Serves both OpenAI (`/v1/chat/completions`) and Anthropic (`/v1/messages`) endpoints. Its `/anthropic/*` route is a pass-through to the real Anthropic API, not to local models.
 - **PostgreSQL** — stores virtual API keys and per-user usage data
 - **Docker Compose** — orchestration (single `docker-compose.yml` for the full stack)
 - **Tailscale** — remote access (network-layer auth, not managed by this repo)
@@ -54,7 +54,7 @@ Everything goes through the `hub` CLI at the repo root:
 
 **Key `.env` variables:** `SMALL_MODEL`, `LARGE_MODEL` (blank to skip), `TENSOR_PARALLEL_SIZE`, `SMALL_MODEL_GPU`, `LARGE_MODEL_GPUS`, `SMALL_GPU_MEM_UTIL`, `LARGE_GPU_MEM_UTIL`, `MAX_MODEL_LEN`, `TOOL_CALL_PARSER`, `LITELLM_MASTER_KEY`, `POSTGRES_PASSWORD`, optional `DECISIVELM_URL` / `DECISIVELM_HEALTH_URL` (blank = no DecisiveLM route) and `DECISIVELM_BUNDLE_REPO` (blank = pull-models skips the bundle); see docs/06-decisivelm.md.
 
-**DecisiveLM (optional)** is a separate server the hub only routes to (`/decisivelm/v1/...` pass-through, auth checked by the DecisiveLM server since LiteLLM pass-through auth is Enterprise-only). The hub never starts it. Keep all DecisiveLM changes off the public `origin` until DecisiveLM's first release.
+**DecisiveLM (optional)** is a separate server the hub only routes to (`/decisivelm/v1/...` pass-through, auth checked by the DecisiveLM server since LiteLLM pass-through auth is Enterprise-only). The hub never starts it.
 
 **The large model service** uses `deploy.replicas: ${LARGE_MODEL_REPLICAS:-0}`. The `hub` script auto-sets this to 1 when `LARGE_MODEL` is non-empty.
 

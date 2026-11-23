@@ -34,7 +34,7 @@ Setup auto-detects your hardware and configures everything. The only manual step
 
 ```
 OpenAI endpoint:    http://<machine-ip>:4200/v1
-Anthropic endpoint: http://<machine-ip>:4200/anthropic/v1
+Anthropic endpoint: http://<machine-ip>:4200        (no path; the SDK adds /v1/messages)
 API Key:            your API key (create with `./hub add-key`)
 Model:              "small" or "large"
 ```

@@ -198,7 +198,7 @@ Any framework using the Anthropic SDK:
 import anthropic
 
 client = anthropic.Anthropic(
-    base_url="http://SERVER_IP:4200/anthropic",
+    base_url="http://SERVER_IP:4200",
     api_key="YOUR_API_KEY",
 )
 
@@ -220,11 +220,26 @@ export OPENAI_BASE_URL="http://SERVER_IP:4200/v1"
 export OPENAI_API_KEY="YOUR_API_KEY"
 
 # For Anthropic-compatible frameworks
-export ANTHROPIC_BASE_URL="http://SERVER_IP:4200/anthropic"
+export ANTHROPIC_BASE_URL="http://SERVER_IP:4200"
 export ANTHROPIC_API_KEY="YOUR_API_KEY"
 ```
 
 Both endpoints serve the same models. Use whichever matches your framework's SDK.
+
+Don't use `http://SERVER_IP:4200/anthropic`: that LiteLLM route forwards to Anthropic's own API, not to the hub's models.
+
+### Claude Code
+
+Claude Code asks for Claude model names, so map them to the hub's aliases:
+
+```bash
+export ANTHROPIC_BASE_URL="http://SERVER_IP:4200"
+export ANTHROPIC_AUTH_TOKEN="YOUR_API_KEY"
+export ANTHROPIC_DEFAULT_OPUS_MODEL=large
+export ANTHROPIC_DEFAULT_SONNET_MODEL=large
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=small
+claude
+```
 
 ## Any OpenAI- or Anthropic-compatible tool
 
@@ -232,7 +247,7 @@ The pattern is always the same:
 
 | Setting | OpenAI SDK | Anthropic SDK |
 |---|---|---|
-| Base URL / API Base | `http://SERVER_IP:4200/v1` | `http://SERVER_IP:4200/anthropic/v1` |
+| Base URL / API Base | `http://SERVER_IP:4200/v1` | `http://SERVER_IP:4200` (no path) |
 | API Key | `YOUR_API_KEY` | `YOUR_API_KEY` |
 | Model name | `small` or `large` | `small` or `large` |
 
